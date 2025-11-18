@@ -24,19 +24,17 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progre
 # STAGE 2 — Node Build
 # ===========================
 FROM node:20-alpine AS node-build
+
 WORKDIR /app
 
-# Copiar archivos necesarios
 COPY backend/package*.json ./
 COPY backend/vite.config.js ./
 COPY backend/postcss.config.js ./
 COPY backend/tailwind.config.js ./
 COPY backend/jsconfig.json ./
 
-# Instalar dependencias
 RUN npm install
 
-# Copiar código fuente completo
 COPY backend/resources ./resources
 COPY backend/public ./public
 COPY backend/routes ./routes
@@ -57,24 +55,29 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo pdo_pgsql gd intl zip bcmath exif \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# ❗Eliminar default.conf sí o sí
 RUN rm -f /etc/nginx/conf.d/default.conf
 
 WORKDIR /var/www/html
 
-# Copiar backend completo ya compilado
+# Backend Laravel ya compilado
 COPY --from=php-build /var/www/html /var/www/html
 
-# Copiar build de Vite
+# Vite build
 COPY --from=node-build /app/public/build /var/www/html/public/build
 
-# Copiar configs
+# Nginx config
 COPY infra/nginx/conf.d/recocycle.conf /etc/nginx/conf.d/recocycle.conf
+
+# Supervisor config
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-COPY backend/.env.example ./
+# ❗ NO copiar .env.example — Render lo espera con variables reales
+# COPY backend/.env.example ./
 
 RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/public
+    && chmod -R 755 /var/www/html/storage \
+    && chmod -R 755 /var/www/html/bootstrap
 
 EXPOSE 80
 
