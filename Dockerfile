@@ -1,5 +1,5 @@
 # ===========================
-# STAGE 1 — PHP + Composer
+# STAGE 1 — PHP + Composer (Laravel backend)
 # ===========================
 FROM php:8.3-fpm AS php-build
 
@@ -15,8 +15,8 @@ ENV COMPOSER_ALLOW_SUPERUSER=1
 
 WORKDIR /var/www/html
 
-# COPIAR TODO EL PROYECTO (NO SOLO backend/)
-COPY . .
+# 👉 Copiar solo el backend Laravel
+COPY backend/ .
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
 
@@ -27,14 +27,17 @@ RUN php artisan config:clear || true \
 
 
 # ===========================
-# STAGE 2 — Node / Vite build
+# STAGE 2 — Node: Vite Build
 # ===========================
 FROM node:20-alpine AS node-build
 
 WORKDIR /app
 
-# Copiar TODO el proyecto para que Vite vea vite.config.js
-COPY . .
+# 👉 Copiamos solo lo necesario
+COPY backend/package*.json ./
+COPY vite.config.js ./
+COPY backend/resources ./resources
+COPY backend/public ./public
 
 RUN npm install
 RUN npm run build
@@ -54,15 +57,15 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copiar backend completo
+# 👉 Backend Laravel completo
 COPY --from=php-build /var/www/html /var/www/html
 
-# Copiar build de Vite generado
+# 👉 Copiar build generado por Vite
 COPY --from=node-build /app/public/build /var/www/html/public/build
 
 
 # ===========================
-# Nginx Config
+# Nginx
 # ===========================
 COPY infra/nginx/conf.d/recocycle.conf /etc/nginx/conf.d/recocycle.conf
 
@@ -71,7 +74,7 @@ RUN rm -f /etc/nginx/conf.d/default.conf || true \
 
 
 # ===========================
-# Directorios Laravel
+# Laravel dirs
 # ===========================
 RUN mkdir -p storage/framework/{cache/data,sessions,views} \
     && mkdir -p bootstrap/cache
@@ -89,6 +92,6 @@ COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 RUN chown -R www-data:www-data /var/www/html \
  && chmod -R 775 storage bootstrap/cache
 
-
 EXPOSE 80
+
 CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

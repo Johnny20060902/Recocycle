@@ -14,35 +14,34 @@ export default defineConfig(({ mode }) => {
       react(),
     ],
 
-    // 🌐 Servidor de desarrollo dentro de Docker
     server: {
-      host: '0.0.0.0', // Escucha dentro del contenedor Node
+      host: '0.0.0.0',
       port: 5173,
       strictPort: true,
-      watch: { usePolling: true }, // Arregla el hot reload en Docker Desktop
-      cors: true, // Permite acceso desde Laravel (localhost:8080)
+      watch: { usePolling: true },
+      cors: true,
       hmr: {
-        host: 'localhost', // Lo que ve tu navegador
+        host: 'localhost',
         protocol: 'ws',
         port: 5173,
       },
     },
 
-    // 🏗️ Build de producción (npm run build)
     build: {
       outDir: 'public/build',
       manifest: true,
       emptyOutDir: true,
       rollupOptions: {
+        input: {
+          app: 'resources/js/app.jsx',   // 🔥🔥 Obligatorio
+        },
         output: {
           manualChunks: undefined,
         },
       },
-      // ⚙️ Esto asegura que el manifest quede directamente en /public/build
-      manifestDir: '.', 
+      manifestDir: '.',
     },
 
-    // 🔍 Alias de recursos
     resolve: {
       alias: {
         '@': '/resources/js',
