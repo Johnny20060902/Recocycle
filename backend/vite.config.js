@@ -48,8 +48,6 @@ export default defineConfig(({ mode }) => {
           manualChunks: undefined,
         },
       },
-
-      manifestDir: '.',
     },
 
     resolve: {
