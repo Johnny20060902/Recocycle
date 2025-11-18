@@ -42,8 +42,9 @@ FROM php:8.3-fpm
 RUN apt-get update && apt-get install -y nginx supervisor \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# ⚠️ ELIMINAR EL NGINX DEFAULT DE RENDER
-RUN rm -f /etc/nginx/conf.d/default.conf
+# ELIMINAR CONFIG DEFAULT DE NGINX (Render)
+RUN rm -f /etc/nginx/conf.d/default.conf || true
+RUN rm -f /etc/nginx/sites-enabled/default || true
 
 WORKDIR /var/www/html
 
