@@ -1,10 +1,74 @@
+# ============================================
+# Laravel + Inertia + React + Vite
+# Gitignore Profesional (Proyecto Raíz)
+# ============================================
+
+# Node
 node_modules/
+npm-debug.log
+yarn-error.log
+
+# Composer (Laravel)
+vendor/
+
+# Laravel storage (ignoramos contenido, no las carpetas)
+storage/*.key
+storage/app/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+
+# Permitimos estas carpetas esenciales (aunque estén vacías)
+!storage/app/public/
+!storage/framework/cache/
+!storage/framework/sessions/
+!storage/framework/views/
+!storage/logs/
+
+# Permitimos gitignore internos
+!storage/app/public/.gitignore
+!storage/framework/cache/.gitignore
+!storage/framework/sessions/.gitignore
+!storage/framework/views/.gitignore
+!storage/logs/.gitignore
+
+# Vite
+public/hot
+public/build/
+public/storage/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDEs
+.vscode/
+.idea/
+
+# Sistemas operativos
+.DS_Store
+Thumbs.db
+
+# PHPUnit
+.phpunit.result.cache
+
+# Builds (por compatibilidad con React/Vite)
 dist/
 build/
-.env
-.env.local
-vendor/
-storage/
-.idea/
-.vscode/
-.DS_Store
+
+# Docker configs (para no subirlos si varían por entorno local)
+docker-compose.yml
+docker-compose.override.yml
+docker/
+docker/*
+
+# Logs raíz
+*.log
+
+# Backup / basura
+*.bak
+*.old
+*.zip
+*.tar

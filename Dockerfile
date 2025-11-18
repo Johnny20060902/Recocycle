@@ -33,7 +33,7 @@ FROM node:20-alpine AS node-build
 
 WORKDIR /app
 
-# 👉 Copiamos solo lo necesario
+# Copiar archivos necesarios
 COPY backend/package*.json ./
 COPY vite.config.js ./
 COPY backend/resources ./resources
@@ -45,7 +45,7 @@ RUN npm run build
 
 
 # ===========================
-# STAGE 3 — Imagen final
+# STAGE 3 — Imagen final (Nginx + PHP-FPM + Supervisor)
 # ===========================
 FROM php:8.3-fpm
 
@@ -57,15 +57,31 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# 👉 Backend Laravel completo
+# 👉 Copiar Laravel backend desde stage php-build
 COPY --from=php-build /var/www/html /var/www/html
 
-# 👉 Copiar build generado por Vite
+# 👉 Copiar build Vite
 COPY --from=node-build /app/public/build /var/www/html/public/build
 
 
 # ===========================
-# Nginx
+# Crear carpetas Laravel *DESPUÉS* del COPY
+# ===========================
+RUN mkdir -p /var/www/html/storage/framework/cache/data && \
+    mkdir -p /var/www/html/storage/framework/sessions && \
+    mkdir -p /var/www/html/storage/framework/views && \
+    mkdir -p /var/www/html/bootstrap/cache
+
+
+# ===========================
+# Permisos correctos
+# ===========================
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache && \
+    chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
+
+# ===========================
+# Nginx Config
 # ===========================
 COPY infra/nginx/conf.d/recocycle.conf /etc/nginx/conf.d/recocycle.conf
 
@@ -74,23 +90,10 @@ RUN rm -f /etc/nginx/conf.d/default.conf || true \
 
 
 # ===========================
-# Laravel dirs
-# ===========================
-RUN mkdir -p storage/framework/{cache/data,sessions,views} \
-    && mkdir -p bootstrap/cache
-
-
-# ===========================
 # Supervisor
 # ===========================
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-
-# ===========================
-# Permisos
-# ===========================
-RUN chown -R www-data:www-data /var/www/html \
- && chmod -R 775 storage bootstrap/cache
 
 EXPOSE 80
 
