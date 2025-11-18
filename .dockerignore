@@ -1,27 +1,21 @@
-# Ignorar dependencias pesadas
-node_modules
-vendor
+# Dependencias
+node_modules/
+vendor/
 
-# Logs
+# Laravel cache
 storage/logs/*
 storage/framework/cache/*
-storage/framework/sessions/*
 storage/framework/views/*
-*.log
+storage/framework/sessions/*
 
 # Env
 .env
 .env.*
 
-# Archivos temporales
+# IDE
+.vscode/
+.idea/
 .DS_Store
-Thumbs.db
 
-# Builds
-public/build
-dist/
-build/
-
-# NO ignorar carpeta docker
-# (antes tenías "docker/" y eso rompía tu deploy)
-!.dockerignore
+# NO ignorar resources/
+# NO ignorar public/
