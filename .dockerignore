@@ -1,21 +1,39 @@
-# Dependencias
+# ==========================
+# 🟢 Dependencias
+# ==========================
 node_modules/
 vendor/
 
-# Laravel cache
+# ==========================
+# 🟢 Caches de Laravel (NO borrar carpetas)
+# ==========================
 storage/logs/*
 storage/framework/cache/*
-storage/framework/views/*
-storage/framework/sessions/*
+storage/framework/testing/*
 
-# Env
+# Mantener estas carpetas vacías pero presentes:
+!storage/framework/views
+!storage/framework/views/
+!storage/framework/sessions
+!storage/framework/sessions/
+!storage/framework/cache
+!storage/framework/cache/
+
+# ==========================
+# 🟢 Variables de entorno
+# ==========================
 .env
 .env.*
 
-# IDE
+# ==========================
+# 🟢 Archivos de editor / SO
+# ==========================
 .vscode/
 .idea/
 .DS_Store
 
-# NO ignorar resources/
-# NO ignorar public/
+# ==========================
+# 🟢 NO ignorar estas carpetas
+# ==========================
+!resources/
+!public/

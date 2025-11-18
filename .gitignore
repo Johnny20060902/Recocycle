@@ -11,7 +11,7 @@ yarn-error.log
 # Composer
 vendor/
 
-# Laravel storage (ignoramos contenido, NO carpetas)
+# Laravel Storage (ignoramos contenido, NO carpetas)
 storage/*.key
 storage/app/*
 storage/framework/cache/*
@@ -26,7 +26,7 @@ storage/logs/*
 !storage/framework/views/
 !storage/logs/
 
-# Permitimos gitignore internos (si existen)
+# Permitimos gitignore internos
 !storage/app/public/.gitignore
 !storage/framework/cache/.gitignore
 !storage/framework/sessions/.gitignore
@@ -68,16 +68,8 @@ build/
 *.tar
 
 # ============================================
-# NO IGNORAR DOCKER (lo usás en local y Render)
+# Docker
 # ============================================
-# ❌ NO ignores docker-compose.yml
-# ❌ NO ignores docker/
-
-# ============================================
-# PROYECTO RAÍZ con carpeta /backend
-# ============================================
-
-# Si tenés estos en raíz del repo:
-# (IMPORTANTE: solo si NO forman parte del backend real)
-# /public y /resources del root están bien ignorados,
-# pero los del backend NO deben ignorarse.
+# NO ignorar docker-compose.yml (lo usás en local + Render)
+# NO ignorar docker/
+# NO ignorar infra/
