@@ -14,6 +14,7 @@ export default defineConfig(({ mode }) => {
       react(),
     ],
 
+    // 🌐 Dev server local
     server: {
       host: '0.0.0.0',
       port: 5173,
@@ -27,18 +28,29 @@ export default defineConfig(({ mode }) => {
       },
     },
 
+    // 🏗️ Build para producción (Render)
     build: {
       outDir: 'public/build',
       manifest: true,
       emptyOutDir: true,
+
+      // ⭐ Evita ESBUILD (que es lo que rompía)
+      minify: "terser",
+      terserOptions: {
+        compress: {
+          drop_console: true,
+        },
+      },
+
       rollupOptions: {
         input: {
-          app: 'resources/js/app.jsx',   // 🔥🔥 Obligatorio
+          app: 'resources/js/app.jsx',
         },
         output: {
           manualChunks: undefined,
         },
       },
+
       manifestDir: '.',
     },
 
