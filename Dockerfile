@@ -42,7 +42,7 @@ FROM php:8.3-fpm
 RUN apt-get update && apt-get install -y nginx supervisor \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Eliminamos el default.conf para evitar el "Welcome to nginx"
+# ⚠️ ELIMINAR EL NGINX DEFAULT DE RENDER
 RUN rm -f /etc/nginx/conf.d/default.conf
 
 WORKDIR /var/www/html
