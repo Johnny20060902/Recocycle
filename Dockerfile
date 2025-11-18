@@ -78,7 +78,11 @@ COPY --from=php-build /var/www/html /var/www/html
 COPY --from=node-build /app/public/build /var/www/html/public/build
 
 # Config Nginx
-COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+# Copiar la configuración CORRECTA de nginx
+COPY infra/nginx/conf.d/recocycle.conf /etc/nginx/conf.d/recocycle.conf
+# eliminar configuraciones por defecto de nginx
+RUN rm -f /etc/nginx/conf.d/default.conf || true
+RUN rm -f /etc/nginx/sites-enabled/default || true
 
 # Config Supervisor
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
