@@ -1,62 +1,27 @@
-# ============================================
-# DOCKERIGNORE PROFESIONAL PARA LARAVEL + VITE
-# ============================================
-
-# Git
-.git
-.gitignore
-.github/
-
-# Node
+# Ignorar dependencias pesadas
 node_modules
-npm-debug.log
-yarn.lock
-
-# Composer
 vendor
 
-# Laravel storage (evita enviar sesiones, cache y logs)
+# Logs
 storage/logs/*
-storage/framework/sessions/*
 storage/framework/cache/*
+storage/framework/sessions/*
 storage/framework/views/*
-storage/app/*
+*.log
 
-# Pero permitimos las carpetas (no los contenidos)
-!storage/app/public/
-!storage/framework/cache/
-!storage/framework/sessions/
-!storage/framework/views/
-!storage/logs/
-
-# Vite build – siempre se construye dentro del Docker, así que NO lo enviamos
-public/build
-public/hot
-public/storage
-
-# Environments
+# Env
 .env
 .env.*
-!.env.example
 
-# IDE / OS
-.vscode
-.idea
+# Archivos temporales
 .DS_Store
 Thumbs.db
 
-# Docker files locales
-docker-compose.yml
-docker-compose.override.yml
-docker/
-docker/*
+# Builds
+public/build
+dist/
+build/
 
-# Test y caches
-.phpunit.result.cache
-composer.lock
-
-# Otros archivos grandes
-*.log
-*.tar
-*.zip
-*.bak
+# NO ignorar carpeta docker
+# (antes tenías "docker/" y eso rompía tu deploy)
+!.dockerignore
