@@ -1,0 +1,64 @@
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+      # ❌ eliminamos la línea 5173:5173 aquí
+    volumes:
+      - ./infra/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./backend:/var/www/html
+    depends_on:
+      php:
+        condition: service_started
+    restart: unless-stopped
+
+  php:
+    build:
+      context: ./backend/.docker/php
+    working_dir: /var/www/html
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  node:
+    image: node:20-alpine
+    working_dir: /var/www/html
+    volumes:
+      - ./backend:/var/www/html
+    command: sh -lc "tail -f /dev/null"
+    ports:
+      - "5173:5173"   # ✅ solo aquí exponemos el puerto para Vite
+    restart: unless-stopped
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: recocycle
+      POSTGRES_USER: recocycle
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U recocycle -d recocycle"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+volumes:
+  pgdata: {}
