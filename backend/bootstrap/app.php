@@ -4,37 +4,54 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
+// 🔥 Middleware necesarios
+use App\Http\Middleware\HandleInertiaRequests;
+use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use App\Http\Middleware\RoleMiddleware;
+use App\Http\Middleware\TrustProxies;
+
 return Application::configure(basePath: dirname(__DIR__))
+
+    /*
+    |--------------------------------------------------------------------------
+    | RUTEO (web, consola y health-check)
+    |--------------------------------------------------------------------------
+    */
     ->withRouting(
         web: __DIR__ . '/../routes/web.php',
         commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
+
+    /*
+    |--------------------------------------------------------------------------
+    | MIDDLEWARE (Laravel 12 ya no tiene Kernel)
+    |--------------------------------------------------------------------------
+    */
     ->withMiddleware(function (Middleware $middleware) {
 
-        /*
-        |--------------------------------------------------------------------------
-        | Middleware Web
-        |--------------------------------------------------------------------------
-        | Aquí definimos los middleware globales para las rutas web,
-        | incluyendo Inertia y prefetch de assets.
-        */
+        // 🔥 TRUST PROXIES → Necesario en Render (HTTPS + Reverse Proxy)
+        $middleware->append(TrustProxies::class);
+
+        // 🔥 Web Middleware: Inertia + Preload de assets
         $middleware->web(append: [
-            \App\Http\Middleware\HandleInertiaRequests::class,
-            \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
+            HandleInertiaRequests::class,
+            AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Alias de Middleware Personalizados
-        |--------------------------------------------------------------------------
-        | Aquí registramos los middleware personalizados para roles.
-        */
+        // 🔥 Alias de middleware personalizados
         $middleware->alias([
-            'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'role' => RoleMiddleware::class,
         ]);
     })
+
+    /*
+    |--------------------------------------------------------------------------
+    | EXCEPCIONES
+    |--------------------------------------------------------------------------
+    */
     ->withExceptions(function (Exceptions $exceptions) {
-        // Aquí podés manejar logs, reportes personalizados, etc.
+        // Aquí podés personalizar reporting o handlers si querés
     })
+
     ->create();
