@@ -1,59 +1,46 @@
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig } from 'vite'
 import laravel from 'laravel-vite-plugin'
 import react from '@vitejs/plugin-react'
 
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '')
-
-  return {
+export default defineConfig({
     plugins: [
-      laravel({
-        input: ['resources/js/app.jsx', 'resources/css/app.css'],
-        refresh: true,
-      }),
-      react(),
+        laravel({
+            input: [
+                'resources/css/app.css',
+                'resources/js/app.jsx',
+            ],
+            refresh: true,
+
+            // 👇 ESTA ES LA CLAVE
+            buildDirectory: 'build',
+        }),
+        react(),
     ],
 
+    resolve: {
+        alias: {
+            '@': '/resources/js',
+        },
+    },
+
     server: {
-      host: '0.0.0.0',
-      port: 5173,
-      strictPort: true,
-      watch: { usePolling: true },
-      cors: true,
-      hmr: {
-        host: 'localhost',
-        protocol: 'ws',
+        host: '0.0.0.0',
         port: 5173,
-      },
+        strictPort: true,
+        watch: { usePolling: true },
+        hmr: {
+            host: 'localhost',
+            protocol: 'ws',
+            port: 5173,
+        },
     },
 
     build: {
-      outDir: 'public/build',
-      manifest: true,
-      emptyOutDir: true,
-
-      // 👇 NO SE IMPORTA TERSER, SOLO SE ACTIVA
-      minify: "terser",
-      terserOptions: {
-        compress: {
-          drop_console: true,
+        minify: "terser",
+        terserOptions: {
+            compress: {
+                drop_console: true,
+            },
         },
-      },
-
-      rollupOptions: {
-        input: {
-          app: 'resources/js/app.jsx',
-        },
-        output: {
-          manualChunks: undefined,
-        },
-      },
     },
-
-    resolve: {
-      alias: {
-        '@': '/resources/js',
-      },
-    },
-  }
 })
