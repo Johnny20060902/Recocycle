@@ -4,23 +4,30 @@ export default function MapaReciclaje({ onLocationSelect }) {
     const mapRef = useRef(null);
     const mapInstanceRef = useRef(null);
     const markerRef = useRef(null);
+    const scriptLoadedRef = useRef(false);
 
     const [loadingGeo, setLoadingGeo] = useState(false);
     const [errorMsg, setErrorMsg] = useState(null);
     const [hasLocation, setHasLocation] = useState(false);
 
     const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-
     const DEFAULT_CENTER = { lat: -17.3895, lng: -66.1568 };
 
     useEffect(() => {
         if (!GOOGLE_MAPS_KEY) {
-            console.error("❌ Google Maps KEY no cargó desde Vite.");
+            console.error("❌ Google Maps: API KEY NO cargó desde Vite.");
             setErrorMsg("Error al cargar el mapa. API KEY no encontrada.");
             return;
         }
 
         const loadMap = () => {
+            // 🛑 Previene error en Render (google.maps undefined)
+            if (!window.google || !window.google.maps) {
+                console.error("❌ Google Maps no está disponible.");
+                setErrorMsg("No se pudo cargar Google Maps.");
+                return;
+            }
+
             const map = new window.google.maps.Map(mapRef.current, {
                 center: DEFAULT_CENTER,
                 zoom: 14,
@@ -31,21 +38,30 @@ export default function MapaReciclaje({ onLocationSelect }) {
                 styles: [
                     { featureType: "poi", stylers: [{ visibility: "off" }] },
                     { featureType: "road", elementType: "labels.icon", stylers: [{ visibility: "off" }] }
-                ],
+                ]
             });
-            mapInstanceRef.current = map;
 
+            mapInstanceRef.current = map;
             map.addListener("click", (e) => placeMarkerAndNotify(e.latLng));
         };
 
-        // Si Google Maps aún no está cargado, cargamos el script
-        if (!window.google) {
+        // 🔥 Evitar doble carga de script
+        if (!scriptLoadedRef.current) {
             const script = document.createElement("script");
-            script.src =
-                `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_KEY}&libraries=places`;
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_KEY}&libraries=places`;
             script.async = true;
             script.defer = true;
-            script.onload = loadMap;
+
+            script.onload = () => {
+                scriptLoadedRef.current = true;
+                loadMap();
+            };
+
+            script.onerror = () => {
+                console.error("❌ Error cargando Google Maps API.");
+                setErrorMsg("No se pudo cargar Google Maps.");
+            };
+
             document.head.appendChild(script);
         } else {
             loadMap();
@@ -63,7 +79,7 @@ export default function MapaReciclaje({ onLocationSelect }) {
                 position: latLng,
                 map: mapInstanceRef.current,
                 icon: "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
-                animation: window.google.maps.Animation.DROP,
+                animation: window.google.maps.Animation.DROP
             });
         }
 
@@ -72,7 +88,7 @@ export default function MapaReciclaje({ onLocationSelect }) {
 
         onLocationSelect({
             latitud: latLng.lat(),
-            longitud: latLng.lng(),
+            longitud: latLng.lng()
         });
     };
 
@@ -88,9 +104,10 @@ export default function MapaReciclaje({ onLocationSelect }) {
         navigator.geolocation.getCurrentPosition(
             (pos) => {
                 setLoadingGeo(false);
-                const lat = pos.coords.latitude;
-                const lng = pos.coords.longitude;
-                const latLng = new window.google.maps.LatLng(lat, lng);
+                const latLng = new window.google.maps.LatLng(
+                    pos.coords.latitude,
+                    pos.coords.longitude
+                );
 
                 if (mapInstanceRef.current) {
                     mapInstanceRef.current.setZoom(17);
@@ -102,7 +119,7 @@ export default function MapaReciclaje({ onLocationSelect }) {
                 const errors = {
                     1: "🚫 Permiso denegado.",
                     2: "📡 Ubicación no disponible.",
-                    3: "⏳ Tiempo de espera agotado.",
+                    3: "⏳ Tiempo de espera agotado."
                 };
                 setErrorMsg(errors[err.code] || "❌ Error al obtener la ubicación.");
             },
@@ -112,6 +129,7 @@ export default function MapaReciclaje({ onLocationSelect }) {
 
     return (
         <div className="relative">
+            {/* BOTONES SUPERIORES */}
             <div className="absolute top-3 left-3 z-10 flex flex-col gap-2">
                 <button
                     type="button"
@@ -135,12 +153,14 @@ export default function MapaReciclaje({ onLocationSelect }) {
                 )}
             </div>
 
+            {/* NOTIFICACIONES DE ERROR */}
             {errorMsg && (
                 <div className="absolute top-3 right-3 z-10 bg-white border border-red-300 text-red-600 rounded-md px-4 py-2 shadow-md text-sm">
                     {errorMsg}
                 </div>
             )}
 
+            {/* MAPA */}
             <div
                 ref={mapRef}
                 className="w-full h-[360px] rounded-2xl overflow-hidden border border-green-400/40 shadow-lg"
