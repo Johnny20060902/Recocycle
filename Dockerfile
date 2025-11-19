@@ -25,7 +25,6 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 FROM node:20-alpine AS node-build
 WORKDIR /app
 
-# 🔥 Capturar la key de Google Maps desde Render
 ARG VITE_GOOGLE_MAPS_API_KEY
 ENV VITE_GOOGLE_MAPS_API_KEY=${VITE_GOOGLE_MAPS_API_KEY}
 
@@ -38,7 +37,7 @@ RUN npm run build
 
 
 # ===========================
-# STAGE 3 — FINAL IMAGE (Nginx + PHP-FPM)
+# STAGE 3 — FINAL IMAGE
 # ===========================
 FROM php:8.3-fpm
 
@@ -50,15 +49,14 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo pdo_pgsql gd intl zip bcmath exif \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# 🔥 Eliminar defaults de Nginx (Render bug fix)
+# 🔥 Limpiar defaults de Nginx
 RUN rm -f /etc/nginx/conf.d/default.conf \
     && rm -f /etc/nginx/sites-enabled/default \
     && rm -f /etc/nginx/sites-available/default
 
-
 WORKDIR /var/www/html
 
-# Copiar backend compilado (PHP)
+# Copiar backend compilado
 COPY --from=php-build /var/www/html /var/www/html
 
 # Copiar build de Vite
@@ -68,15 +66,15 @@ COPY --from=node-build /app/public/build /var/www/html/public/build
 COPY infra/nginx/conf.d/recocycle.conf /etc/nginx/conf.d/recocycle.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Permisos correctos para producción
+# 🔥 Copiar script laravel-init (LO QUE FALTABA)
+COPY docker/laravel-init.sh /var/www/html/docker/laravel-init.sh
+RUN chmod +x /var/www/html/docker/laravel-init.sh
+
+# Permisos correctos
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 /var/www/html/storage \
     && chmod -R 775 /var/www/html/bootstrap/cache \
     && chmod -R 755 /var/www/html/public
-
-# ❌ IMPORTANTE: Quitamos el storage:link del Dockerfile (rompe Render)
-# RUN php artisan storage:link || true
-
 
 EXPOSE 80
 
