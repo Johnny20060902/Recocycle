@@ -20,8 +20,8 @@ class Usuario extends Authenticatable
         'genero',
         'email',
         'password',
-        'role',             // 'usuario' | 'recolector' | 'admin'
-        'estado',
+        'role',             // admin | recolector | usuario
+        'estado',           // activo | inactivo | pendiente
         'puntaje',
         'rating_promedio',
     ];
@@ -35,17 +35,9 @@ class Usuario extends Authenticatable
         'rating_promedio' => 'float',
     ];
 
-    // Campos calculados que se incluirán automáticamente al serializar
-    protected $appends = [
-        'rating_promedio_live',
-        'rating_stars',
-        'rating_percent',
-        'nombre_completo',
-    ];
-
     /*
     |--------------------------------------------------------------------------
-    | 🔐 Hash automático de contraseña
+    | 🔐 Hash automático de contraseña (Producción OK)
     |--------------------------------------------------------------------------
     */
     public function setPasswordAttribute($value)
@@ -59,7 +51,51 @@ class Usuario extends Authenticatable
 
     /*
     |--------------------------------------------------------------------------
-    | 🔗 Relaciones principales
+    | 🔢 Campos Calculados (Appends)
+    |--------------------------------------------------------------------------
+    */
+    protected $appends = [
+        'rating_promedio_live',
+        'rating_stars',
+        'rating_percent',
+        'nombre_completo',
+    ];
+
+    public function getNombreCompletoAttribute(): string
+    {
+        return "{$this->nombres} {$this->apellidos}";
+    }
+
+    public function getRatingPromedioLiveAttribute(): float
+    {
+        $avg = $this->calificacionesRecibidas()->avg('puntaje');
+        return round($avg ?? 0, 2);
+    }
+
+    public function getRatingStarsAttribute(): array
+    {
+        $value = $this->rating_promedio_live;
+        $filled = (int) floor($value);
+        $decimal = $value - $filled;
+        $half = $decimal >= 0.25 && $decimal < 0.75;
+        $empty = 5 - $filled - ($half ? 1 : 0);
+
+        return [
+            'filled' => $filled,
+            'half'   => $half,
+            'empty'  => $empty,
+            'value'  => $value,
+        ];
+    }
+
+    public function getRatingPercentAttribute(): int
+    {
+        return (int) round(($this->rating_promedio_live / 5) * 100);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 🔗 Relaciones
     |--------------------------------------------------------------------------
     */
     public function reciclajes()
@@ -77,12 +113,10 @@ class Usuario extends Authenticatable
         return $this->hasMany(PuntoRecoleccion::class, 'recolector_id');
     }
 
-    // ⭐ Calificaciones mutuas
     public function calificacionesRecibidas()
     {
         return $this->hasMany(Calificacion::class, 'evaluado_id');
     }
-
 
     public function calificacionesEmitidas()
     {
@@ -91,49 +125,18 @@ class Usuario extends Authenticatable
 
     /*
     |--------------------------------------------------------------------------
-    | 📊 Promedio de calificaciones (persistido y live)
+    | ⭐ Promedio persistente
     |--------------------------------------------------------------------------
     */
-    // Actualiza el valor guardado en BD
     public function actualizarPromedio()
     {
         $promedio = $this->calificacionesRecibidas()->avg('puntaje') ?? 0;
         $this->update(['rating_promedio' => round($promedio, 2)]);
     }
 
-    // Promedio calculado “en vivo” (sin depender de la columna)
-    public function getRatingPromedioLiveAttribute(): float
-    {
-        $avg = $this->calificacionesRecibidas()->avg('puntaje');
-        return round((float) ($avg ?? 0), 2);
-    }
-
-    // Representación visual de estrellas (para UI)
-    public function getRatingStarsAttribute(): array
-    {
-        $value = $this->rating_promedio_live;
-        $filled = (int) floor($value);
-        $decimal = $value - $filled;
-        $half = $decimal >= 0.25 && $decimal < 0.75;
-        $empty = 5 - $filled - ($half ? 1 : 0);
-
-        return [
-            'filled' => $filled,
-            'half'   => $half,
-            'empty'  => $empty,
-            'value'  => $value,
-        ];
-    }
-
-    // Porcentaje (0–100) para barras o medidores
-    public function getRatingPercentAttribute(): int
-    {
-        return (int) round(($this->rating_promedio_live / 5) * 100);
-    }
-
     /*
     |--------------------------------------------------------------------------
-    | 📈 Scopes y utilidades
+    | 🔍 Scopes
     |--------------------------------------------------------------------------
     */
     public function scopeOrderByReputacion($query)
@@ -143,16 +146,11 @@ class Usuario extends Authenticatable
 
     /*
     |--------------------------------------------------------------------------
-    | 🧩 Accesores simples
+    | 🏢 Relación Empresa
     |--------------------------------------------------------------------------
     */
-    public function getNombreCompletoAttribute(): string
-    {
-        return "{$this->nombres} {$this->apellidos}";
-    }
     public function empresa()
-{
-    return $this->hasOne(Empresa::class, 'usuario_id');
-}
-
+    {
+        return $this->hasOne(Empresa::class, 'usuario_id');
+    }
 }

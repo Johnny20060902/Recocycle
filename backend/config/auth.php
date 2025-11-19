@@ -20,7 +20,7 @@ return [
     'guards' => [
         'web' => [
             'driver' => 'session',
-            'provider' => 'usuarios', // ✅ ahora usa 'usuarios'
+            'provider' => 'usuarios', // 🔥 provider correcto
         ],
     ],
 
@@ -30,21 +30,21 @@ return [
     |--------------------------------------------------------------------------
     */
     'providers' => [
-        'usuarios' => [ // ✅ nuevo nombre del provider
+        'usuarios' => [ // 🔥 nuestro único provider
             'driver' => 'eloquent',
-            'model' => App\Models\Usuario::class, // ✅ tu modelo correcto
+            'model' => App\Models\Usuario::class, // 🔥 tu modelo real de login
         ],
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | Resetting Passwords
+    | Password Reset
     |--------------------------------------------------------------------------
     */
     'passwords' => [
-        'usuarios' => [ // ✅ también actualizado
+        'usuarios' => [
             'provider' => 'usuarios',
-            'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
+            'table' => 'password_reset_tokens', // Laravel 12 usa esta tabla
             'expire' => 60,
             'throttle' => 60,
         ],
@@ -55,6 +55,6 @@ return [
     | Password Confirmation Timeout
     |--------------------------------------------------------------------------
     */
-    'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
+    'password_timeout' => 10800,
 
 ];
