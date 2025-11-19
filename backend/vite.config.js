@@ -1,46 +1,57 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import laravel from 'laravel-vite-plugin'
 import react from '@vitejs/plugin-react'
 
-export default defineConfig({
-    plugins: [
-        laravel({
-            input: [
-                'resources/css/app.css',
-                'resources/js/app.jsx',
-            ],
-            refresh: true,
+export default defineConfig(({ mode }) => {
 
-            // 👇 ESTA ES LA CLAVE
-            buildDirectory: 'build',
-        }),
-        react(),
-    ],
+    // 📌 Cargar variables del .env
+    const env = loadEnv(mode, process.cwd(), '')
 
-    resolve: {
-        alias: {
-            '@': '/resources/js',
+    return {
+        define: {
+            // 📌 Esto permite usar process.env.VARIABLE en React
+            'process.env': env,
         },
-    },
 
-    server: {
-        host: '0.0.0.0',
-        port: 5173,
-        strictPort: true,
-        watch: { usePolling: true },
-        hmr: {
-            host: 'localhost',
-            protocol: 'ws',
-            port: 5173,
-        },
-    },
+        plugins: [
+            laravel({
+                input: [
+                    'resources/css/app.css',
+                    'resources/js/app.jsx',
+                ],
+                refresh: true,
 
-    build: {
-        minify: "terser",
-        terserOptions: {
-            compress: {
-                drop_console: true,
+                // Carpeta donde Vite construye los assets
+                buildDirectory: 'build',
+            }),
+            react(),
+        ],
+
+        resolve: {
+            alias: {
+                '@': '/resources/js',
             },
         },
-    },
+
+        server: {
+            host: '0.0.0.0',
+            port: 5173,
+            strictPort: true,
+            watch: { usePolling: true },
+            hmr: {
+                host: 'localhost',
+                protocol: 'ws',
+                port: 5173,
+            },
+        },
+
+        build: {
+            minify: "terser",
+            terserOptions: {
+                compress: {
+                    drop_console: true,
+                },
+            },
+        },
+    }
 })
