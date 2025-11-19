@@ -9,6 +9,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CalificacionController;
 use App\Http\Controllers\RecolectorController;
 
+
 // Panel Admin
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\EmpresaController;
@@ -19,11 +20,15 @@ use App\Http\Controllers\Admin\RecolectorController as AdminRecolectorController
 use App\Http\Controllers\Admin\CategoriaController;
 use App\Http\Controllers\Admin\ReporteController;
 
+
 // Panel Usuario
 use App\Http\Controllers\Usuario\UsuarioController;
 use App\Http\Controllers\Usuario\PremioController as UsuarioPremioController;
 use App\Http\Controllers\Usuario\ReciclajeController as UsuarioReciclajeController;
 use App\Http\Controllers\Usuario\RankingController as UsuarioRankingController;
+
+
+
 
 
 // Flujo Recolector
@@ -143,6 +148,7 @@ Route::middleware(['auth', 'verified', 'role:usuario'])
         Route::post('/reciclar', [UsuarioReciclajeController::class, 'store'])->name('reciclar.store');
         Route::delete('/reciclajes/{punto}', [UsuarioReciclajeController::class, 'destroy'])->name('reciclajes.destroy');
         Route::get('/puntos/list', [UsuarioReciclajeController::class, 'list'])->name('puntos.list');
+
 
         // Puntos
         Route::get('/puntos', [UsuarioController::class, 'puntos'])->name('puntos');

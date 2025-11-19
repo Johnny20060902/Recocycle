@@ -235,16 +235,59 @@ public function list()
 {
     $user = auth()->user();
 
-    $puntos = \App\Models\PuntoRecoleccion::with(['recolector'])
-        ->where('usuario_id', $user->id)
-        ->orderBy('created_at', 'desc')
-        ->get();
+    // 🔒 Si no está logueado
+    if (!$user) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Usuario no autenticado.',
+        ], 401);
+    }
+
+    // 📦 Cargar puntos + reciclaje + recolector
+    $puntos = \App\Models\PuntoRecoleccion::with([
+        'recolector:id,nombres,apellidos,rating_promedio,foto_url',
+        'reciclaje:id,imagenes_url,descripcion'
+    ])
+    ->where('usuario_id', $user->id)
+    ->orderBy('created_at', 'desc')
+    ->get()
+    ->map(function ($p) use ($user) {
+
+        return [
+            'id'               => $p->id,
+            'codigo'           => $p->codigo,
+            'material'         => $p->material,
+            'descripcion'      => $p->descripcion ?? $p->reciclaje?->descripcion,
+            'estado'           => $p->estado,
+            'solicitud_estado' => $p->solicitud_estado,
+            'fecha_disponible' => $p->fecha_disponible,
+            'hora_desde'       => $p->hora_desde,
+            'hora_hasta'       => $p->hora_hasta,
+            'latitud'          => $p->latitud,
+            'longitud'         => $p->longitud,
+
+            // 📸 Imágenes del reciclaje
+            'imagenes_url' => is_array($p->reciclaje?->imagenes_url)
+                ? $p->reciclaje->imagenes_url
+                : [],
+
+            // 👷 Recolector asignado
+            'recolector' => $p->recolector ? [
+                'nombres'   => $p->recolector->nombres,
+                'apellidos' => $p->recolector->apellidos,
+                'rating'    => $p->recolector->rating_promedio,
+                'foto_url'  => $p->recolector->foto_url
+                    ? asset('storage/' . $p->recolector->foto_url)
+                    : null,
+            ] : null,
+        ];
+    });
 
     return response()->json([
         'success' => true,
+        'message' => 'Listado actualizado correctamente.',
         'puntos'  => $puntos,
-    ]);
+    ], 200);
 }
-
 
 }
