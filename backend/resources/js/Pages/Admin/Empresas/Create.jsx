@@ -27,121 +27,114 @@ export default function EmpresaCreate({ auth }) {
   const [darkMode, setDarkMode] = useState(
     document.body.getAttribute("data-theme") === "dark"
   );
-
   const [showPassword, setShowPassword] = useState(false);
 
+  // Detectar cambios del modo oscuro global
   useEffect(() => {
-    const observer = new MutationObserver(() =>
+    const obs = new MutationObserver(() =>
       setDarkMode(document.body.getAttribute("data-theme") === "dark")
     );
-    observer.observe(document.body, { attributes: true });
-    return () => observer.disconnect();
+    obs.observe(document.body, { attributes: true });
+    return () => obs.disconnect();
   }, []);
 
+  // Guardar
   const handleSubmit = (e) => {
     e.preventDefault();
 
     post(route("admin.empresas.store"), {
-      forceFormData: true, // asegura envío correcto con archivo
+      forceFormData: true,
       onSuccess: () => {
-        Swal.fire(
-          "Registrada",
-          "La empresa se registró correctamente.",
-          "success"
-        );
+        Swal.fire({
+          icon: "success",
+          title: "Registrada",
+          text: "La empresa se registró correctamente.",
+          confirmButtonColor: "#00d4a1",
+        });
       },
       onError: () => {
-        Swal.fire(
-          "Error",
-          "Ocurrió un problema al registrar la empresa.",
-          "error"
-        );
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Ocurrió un problema al registrar la empresa.",
+          confirmButtonColor: "#d33",
+        });
       },
     });
   };
 
+  // Checkbox categorías + regla de "Todo"
   const handleCheckbox = (cat) => {
-    // Si tocó "Todo"
     if (cat === "Todo") {
-      if (data.categorias.includes("Todo")) {
-        // Ya estaba activo → limpiar todo
-        setData("categorias", []);
-      } else {
-        // Activar todas las categorías
-        setData("categorias", ALL_CATEGORIES);
-      }
+      setData(
+        "categorias",
+        data.categorias.includes("Todo") ? [] : ALL_CATEGORIES
+      );
       return;
     }
 
-    let nuevas = [];
-
-    if (data.categorias.includes(cat)) {
-      // Quitar categoría
-      nuevas = data.categorias.filter((c) => c !== cat);
-    } else {
-      // Agregar categoría
-      nuevas = [...data.categorias, cat];
-    }
+    let nuevas = data.categorias.includes(cat)
+      ? data.categorias.filter((c) => c !== cat)
+      : [...data.categorias, cat];
 
     const sinTodo = ALL_CATEGORIES.filter((c) => c !== "Todo");
-    const tieneTodasMenosTodo = sinTodo.every((c) => nuevas.includes(c));
+    const tieneTodas = sinTodo.every((c) => nuevas.includes(c));
 
-    if (tieneTodasMenosTodo) {
-      // Si marcó todas las específicas → marcamos también "Todo"
-      if (!nuevas.includes("Todo")) {
-        nuevas.push("Todo");
-      }
-    } else {
-      // Si desmarcó alguna → sacamos "Todo"
-      nuevas = nuevas.filter((c) => c !== "Todo");
-    }
+    nuevas = tieneTodas
+      ? [...sinTodo, "Todo"]
+      : nuevas.filter((c) => c !== "Todo");
 
     setData("categorias", nuevas);
   };
 
-  // 🎨 Colores según tema
+  // 🎨 Estilos según tema
   const textColor = darkMode ? "#eaeaea" : "#222";
-  const secondaryText = darkMode ? "#bfbfbf" : "#555";
+  const secondaryText = darkMode ? "#bfbfbf" : "#666";
   const bgCard = darkMode ? "#181818" : "#ffffff";
   const bgInput = darkMode ? "#222" : "#fff";
   const borderColor = darkMode ? "#333" : "#ddd";
 
   const inputBaseStyle = {
     backgroundColor: bgInput,
-    color: textColor,
     borderColor,
+    color: textColor,
   };
 
   return (
     <AppLayout title="Registrar Empresa" auth={auth}>
       <div className="container py-4 animate__animated animate__fadeIn">
-        {/* ======= ENCABEZADO ======= */}
-        <div className="d-flex justify-content-between align-items-center mb-4">
+        {/* ============================= */}
+        {/* ENCABEZADO                     */}
+        {/* ============================= */}
+        <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
           <h2
             className="fw-bold mb-0"
             style={{ color: darkMode ? "#4dd2a1" : "#007bff" }}
           >
             🏢 Nuevo Recolector
           </h2>
+
           <Link
             href={route("admin.empresas.index")}
-            className={`btn rounded-pill shadow-sm ${
+            className={`btn rounded-pill shadow-sm px-3 ${
               darkMode
-                ? "btn-outline-light text-light border-secondary"
+                ? "btn-outline-light border-secondary text-light"
                 : "btn-outline-secondary"
             }`}
           >
-            <i className="bi bi-arrow-left-circle me-2"></i> Volver al listado
+            <i className="bi bi-arrow-left-circle me-2"></i> Volver
           </Link>
         </div>
 
-        {/* ======= FORMULARIO ======= */}
+        {/* ============================= */}
+        {/* FORMULARIO                    */}
+        {/* ============================= */}
         <div
           className="card border-0 shadow-lg rounded-4 p-4"
           style={{
             background: bgCard,
             color: textColor,
-            transition: "all 0.3s ease",
+            transition: "all .3s ease",
           }}
         >
           <form onSubmit={handleSubmit}>
@@ -149,7 +142,7 @@ export default function EmpresaCreate({ auth }) {
               {/* NOMBRE */}
               <div className="col-md-6">
                 <label className="fw-semibold mb-1">
-                  Nombre de la Empresa Recolectora
+                  Nombre de la Empresa
                 </label>
                 <input
                   type="text"
@@ -165,7 +158,7 @@ export default function EmpresaCreate({ auth }) {
 
               {/* CONTACTO */}
               <div className="col-md-6">
-                <label className="fw-semibold mb-1">Número de contacto</label>
+                <label className="fw-semibold mb-1">Contacto telefónico</label>
                 <input
                   type="text"
                   className="form-control shadow-sm rounded-pill"
@@ -207,7 +200,7 @@ export default function EmpresaCreate({ auth }) {
                   <button
                     type="button"
                     className="btn btn-outline-secondary ms-2 rounded-pill d-flex align-items-center"
-                    onClick={() => setShowPassword((prev) => !prev)}
+                    onClick={() => setShowPassword(!showPassword)}
                   >
                     <i
                       className={`bi ${
@@ -230,6 +223,7 @@ export default function EmpresaCreate({ auth }) {
                   style={inputBaseStyle}
                   onChange={(e) => setData("logo", e.target.files[0])}
                 />
+
                 {progress && (
                   <div className="progress mt-2" style={{ height: "8px" }}>
                     <div
@@ -237,7 +231,7 @@ export default function EmpresaCreate({ auth }) {
                       role="progressbar"
                       style={{
                         width: `${progress.percentage}%`,
-                        background: darkMode ? "#00c896" : "#198754",
+                        background: darkMode ? "#00c896" : "#0d6efd",
                       }}
                     >
                       {progress.percentage}%
@@ -247,9 +241,12 @@ export default function EmpresaCreate({ auth }) {
               </div>
             </div>
 
-            {/* ======= CATEGORÍAS ======= */}
+            {/* ============================= */}
+            {/* CATEGORÍAS                   */}
+            {/* ============================= */}
             <div className="mt-4">
-              <label className="fw-semibold mb-2">Categorías que maneja:</label>
+              <label className="fw-semibold mb-2">Categorías:</label>
+
               <div className="row">
                 {ALL_CATEGORIES.map((cat) => (
                   <div className="col-md-3 col-6" key={cat}>
@@ -272,6 +269,7 @@ export default function EmpresaCreate({ auth }) {
                   </div>
                 ))}
               </div>
+
               {errors?.categorias && (
                 <small className="text-danger d-block mt-1">
                   {errors.categorias}
@@ -279,18 +277,20 @@ export default function EmpresaCreate({ auth }) {
               )}
             </div>
 
-            {/* ======= BOTÓN GUARDAR ======= */}
+            {/* ============================= */}
+            {/* BOTÓN GUARDAR                */}
+            {/* ============================= */}
             <div className="text-end mt-4">
               <button
                 type="submit"
                 disabled={processing}
-                className={`btn btn-success rounded-pill px-4 py-2 fw-semibold shadow-sm ${
-                  processing ? "opacity-75 cursor-not-allowed" : ""
+                className={`btn rounded-pill px-4 py-2 fw-semibold shadow-sm ${
+                  processing ? "opacity-75" : ""
                 }`}
                 style={{
-                  background:
-                    "linear-gradient(90deg, #00c896 0%, #00d4a1 100%)",
+                  background: "linear-gradient(90deg, #00c896 0%, #00d4a1 100%)",
                   border: "none",
+                  color: "#fff",
                 }}
               >
                 {processing ? (

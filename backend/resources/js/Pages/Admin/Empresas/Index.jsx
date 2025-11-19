@@ -20,13 +20,13 @@ export default function EmpresasIndex({ auth, empresas = [] }) {
     document.body.getAttribute("data-theme") === "dark"
   );
 
-  // Detectar cambios globales del modo oscuro (sin romper reactividad)
+  // Detectar modo oscuro global
   useEffect(() => {
-    const observer = new MutationObserver(() =>
+    const obs = new MutationObserver(() =>
       setDarkMode(document.body.getAttribute("data-theme") === "dark")
     );
-    observer.observe(document.body, { attributes: true });
-    return () => observer.disconnect();
+    obs.observe(document.body, { attributes: true });
+    return () => obs.disconnect();
   }, []);
 
   const handleDelete = (id) => {
@@ -55,7 +55,7 @@ export default function EmpresasIndex({ auth, empresas = [] }) {
     });
   };
 
-  // 🧩 Normalizar categorías (puede venir como JSON string o array)
+  // Normalizar categorías
   const getCategoriasArray = (categorias) => {
     if (!categorias) return [];
 
@@ -68,7 +68,6 @@ export default function EmpresasIndex({ auth, empresas = [] }) {
         const parsed = JSON.parse(categorias);
         arr = Array.isArray(parsed) ? parsed : [];
       } catch {
-        // fallback por si viniera separado por comas
         arr = categorias
           .toString()
           .split(",")
@@ -77,7 +76,6 @@ export default function EmpresasIndex({ auth, empresas = [] }) {
       }
     }
 
-    // 🧠 Regla: si contiene "Todo", para mostrar usamos TODAS menos "Todo"
     if (arr.includes("Todo")) {
       return ALL_CATEGORIES.filter((c) => c !== "Todo");
     }
@@ -85,30 +83,31 @@ export default function EmpresasIndex({ auth, empresas = [] }) {
     return arr;
   };
 
-  // 🎨 Colores según modo
+  // Colores según modo
   const textColor = darkMode ? "#eaeaea" : "#222";
   const secondaryText = darkMode ? "#bdbdbd" : "#555";
-  const bgCard = darkMode ? "#181818" : "#ffffff";
+  const bgCard = darkMode ? "#171717" : "#ffffff";
   const headerBg = darkMode
-    ? "linear-gradient(90deg, #0d0d0d 0%, #1e1e1e 100%)"
+    ? "linear-gradient(90deg, #0d0d0d 0%, #1c1c1c 100%)"
     : "linear-gradient(90deg, #0066ff 0%, #00d4a1 100%)";
-  const tableHeaderBg = darkMode ? "#202020" : "#e9f5ff";
-  const tableHeaderColor = darkMode ? "#cfcfcf" : "#003366";
+  const tableHeaderBg = darkMode ? "#1f1f1f" : "#eaf3ff";
+  const tableHeaderColor = darkMode ? "#d0d0d0" : "#003366";
 
   return (
     <AppLayout title="Módulo de Empresas" auth={auth}>
       <div className="container py-4 animate__animated animate__fadeIn">
-        {/* ======= ENCABEZADO ======= */}
-        <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4">
+
+        {/* HEADER */}
+        <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
           <div>
             <h2
               className="fw-bold mb-1"
-              style={{ color: darkMode ? "#4dd2a1" : "#007bff" }}
+              style={{ color: darkMode ? "#4dd2a1" : "#0066ff" }}
             >
               🏢 Empresas Registradas
             </h2>
             <p className="mb-0" style={{ color: secondaryText }}>
-              Administra las empresas aliadas y sus datos básicos.
+              Administra las empresas aliadas.
               {empresas.length > 0 && (
                 <span className="ms-1 fw-semibold">
                   ({empresas.length} registradas)
@@ -119,45 +118,45 @@ export default function EmpresasIndex({ auth, empresas = [] }) {
 
           <Link
             href={route("admin.empresas.create")}
-            className="btn btn-success rounded-pill shadow-sm fw-semibold d-flex align-items-center gap-2 mt-3 mt-md-0"
+            className="btn btn-success rounded-pill shadow-sm fw-semibold d-flex align-items-center gap-2 px-4 py-2"
             style={{
-              boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
               background: "linear-gradient(90deg, #00c896 0%, #00d4a1 100%)",
+              whiteSpace: "nowrap",
             }}
           >
             <i className="bi bi-plus-circle-fill"></i> Registrar Recolector
           </Link>
         </div>
 
-        {/* ======= TABLA ======= */}
+        {/* CARD CONTENEDOR */}
         <div
           className="card border-0 shadow-lg rounded-4 overflow-hidden"
           style={{
             background: bgCard,
             color: textColor,
-            transition: "all 0.3s ease",
+            transition: "all .3s ease",
           }}
         >
+          {/* CARD HEADER */}
           <div
-            className="card-header fw-semibold py-3 d-flex justify-content-between align-items-center"
+            className="card-header fw-semibold py-3"
             style={{
               background: headerBg,
               color: "#fff",
-              borderBottom: "1px solid rgba(255,255,255,0.1)",
             }}
           >
-            <span>
-              <i className="bi bi-building me-2"></i> Listado de empresas
-            </span>
+            <i className="bi bi-building me-2"></i> Listado de empresas
           </div>
 
-          <div className="table-responsive">
+          {/* TABLA */}
+          <div className="table-responsive" style={{ maxHeight: "75vh" }}>
             <table
               className="table align-middle text-center mb-0"
               style={{
                 color: textColor,
+                minWidth: "900px",
                 borderColor: darkMode
-                  ? "rgba(255,255,255,0.08)"
+                  ? "rgba(255,255,255,0.07)"
                   : "rgba(0,0,0,0.05)",
               }}
             >
@@ -165,7 +164,10 @@ export default function EmpresasIndex({ auth, empresas = [] }) {
                 style={{
                   backgroundColor: tableHeaderBg,
                   color: tableHeaderColor,
-                  fontWeight: "600",
+                  fontWeight: 600,
+                  position: "sticky",
+                  top: 0,
+                  zIndex: 2,
                 }}
               >
                 <tr>
@@ -175,9 +177,10 @@ export default function EmpresasIndex({ auth, empresas = [] }) {
                   <th>Contacto</th>
                   <th>Categorías</th>
                   <th>Estado</th>
-                  <th>Acciones</th>
+                  <th style={{ minWidth: "150px" }}>Acciones</th>
                 </tr>
               </thead>
+
               <tbody>
                 {empresas.length > 0 ? (
                   empresas.map((e) => {
@@ -187,10 +190,9 @@ export default function EmpresasIndex({ auth, empresas = [] }) {
                       <tr
                         key={e.id}
                         className={`border-bottom ${
-                          darkMode
-                            ? "border-secondary-subtle"
-                            : "border-light-subtle"
+                          darkMode ? "border-secondary-subtle" : "border-light"
                         }`}
+                        style={{ transition: "background .2s" }}
                       >
                         <td>
                           {e.logo ? (
@@ -205,17 +207,16 @@ export default function EmpresasIndex({ auth, empresas = [] }) {
                               }}
                             />
                           ) : (
-                            <span
-                              className="fst-italic small"
-                              style={{ color: secondaryText }}
-                            >
+                            <span className="fst-italic small" style={{ color: secondaryText }}>
                               Sin logo
                             </span>
                           )}
                         </td>
+
                         <td className="fw-semibold">{e.nombre}</td>
                         <td style={{ color: secondaryText }}>{e.correo}</td>
                         <td style={{ color: secondaryText }}>{e.contacto}</td>
+
                         <td>
                           {categorias.length > 0 ? (
                             <div className="d-flex flex-wrap justify-content-center gap-1">
@@ -225,12 +226,12 @@ export default function EmpresasIndex({ auth, empresas = [] }) {
                                   className="badge rounded-pill px-3 py-1"
                                   style={{
                                     backgroundColor: darkMode
-                                      ? "rgba(0, 212, 161, 0.12)"
+                                      ? "rgba(0, 212, 161, 0.15)"
                                       : "rgba(0, 102, 255, 0.08)",
                                     color: darkMode ? "#4dd2a1" : "#0056b3",
                                     border: darkMode
-                                      ? "1px solid rgba(0, 212, 161, 0.5)"
-                                      : "1px solid rgba(0, 102, 255, 0.35)",
+                                      ? "1px solid rgba(0,212,161,0.4)"
+                                      : "1px solid rgba(0,102,255,0.3)",
                                   }}
                                 >
                                   {cat}
@@ -238,14 +239,12 @@ export default function EmpresasIndex({ auth, empresas = [] }) {
                               ))}
                             </div>
                           ) : (
-                            <span
-                              className="fst-italic small"
-                              style={{ color: secondaryText }}
-                            >
+                            <span className="fst-italic small" style={{ color: secondaryText }}>
                               Sin categorías
                             </span>
                           )}
                         </td>
+
                         <td>
                           {e.activo ? (
                             <span className="badge bg-success bg-opacity-75 px-3 py-2">
@@ -257,11 +256,12 @@ export default function EmpresasIndex({ auth, empresas = [] }) {
                             </span>
                           )}
                         </td>
+
                         <td>
-                          <div className="d-flex justify-content-center gap-2">
+                          <div className="d-flex justify-content-center gap-2 flex-wrap">
                             <Link
                               href={route("admin.empresas.edit", e.id)}
-                              className={`btn btn-sm rounded-pill d-flex align-items-center gap-1 shadow-sm ${
+                              className={`btn btn-sm rounded-pill px-3 d-flex align-items-center gap-1 shadow-sm ${
                                 darkMode
                                   ? "btn-outline-info text-info"
                                   : "btn-outline-primary"
@@ -269,9 +269,10 @@ export default function EmpresasIndex({ auth, empresas = [] }) {
                             >
                               <i className="bi bi-pencil-square"></i> Editar
                             </Link>
+
                             <button
                               onClick={() => handleDelete(e.id)}
-                              className={`btn btn-sm rounded-pill d-flex align-items-center gap-1 shadow-sm ${
+                              className={`btn btn-sm rounded-pill px-3 d-flex align-items-center gap-1 shadow-sm ${
                                 darkMode
                                   ? "btn-outline-danger text-danger"
                                   : "btn-outline-danger"

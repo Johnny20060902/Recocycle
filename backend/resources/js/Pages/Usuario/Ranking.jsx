@@ -29,7 +29,7 @@ export default function MiProgreso({ auth }) {
     axios
       .get(route("usuario.ranking.data"))
       .then((res) => {
-        if (res.data && res.data.userRank) {
+        if (res.data?.userRank) {
           setStats({
             puntaje: res.data.userRank.puntaje ?? 0,
             posicion: res.data.userRank.posicion ?? 0,
@@ -41,17 +41,17 @@ export default function MiProgreso({ auth }) {
           });
         }
       })
-      .catch((err) => console.error("Error cargando progreso:", err));
+      .catch(() => {});
   }, []);
 
-  // ==== DATA SEGURA PARA GRÁFICOS ====
+  // DATA DE GRÁFICOS
   const barData = {
     labels: ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"],
     datasets: [
       {
         label: "Puntos ganados",
         data:
-          stats.progresoSemanal && stats.progresoSemanal.length > 0
+          stats.progresoSemanal?.length > 0
             ? stats.progresoSemanal
             : [0, 0, 0, 0, 0, 0, 0],
         backgroundColor: "#00c896",
@@ -62,13 +62,14 @@ export default function MiProgreso({ auth }) {
 
   const doughnutData = {
     labels:
-      stats.materialesPorTipo && stats.materialesPorTipo.length > 0
+      stats.materialesPorTipo?.length > 0
         ? stats.materialesPorTipo.map((m) => m.tipo)
         : ["Plástico", "Cartón", "Vidrio", "Metal"],
+
     datasets: [
       {
         data:
-          stats.materialesPorTipo && stats.materialesPorTipo.length > 0
+          stats.materialesPorTipo?.length > 0
             ? stats.materialesPorTipo.map((m) => m.cantidad)
             : [35, 25, 20, 10],
         backgroundColor: ["#00c896", "#00b87b", "#008f60", "#005f3a"],
@@ -77,22 +78,23 @@ export default function MiProgreso({ auth }) {
     ],
   };
 
-  const nivel = Math.min(100, (stats.puntaje / 1000) * 100); // 1000 puntos = nivel máximo
+  const nivel = Math.min(100, (stats.puntaje / 1000) * 100);
 
   return (
     <UserLayout title="Mi Progreso Ecológico" auth={auth}>
-      <div className="container py-5 animate__animated animate__fadeIn">
+      <div className="container py-4 animate__animated animate__fadeIn">
+
         {/* ===== ENCABEZADO ===== */}
-        <div className="text-center mb-5">
-          <h1 className="fw-bold text-eco">🌿 Mi Progreso Ecológico</h1>
-          <p className="text-secondary fs-5">
+        <div className="text-center mb-4">
+          <h1 className="fw-bold text-eco fs-2">🌿 Mi Progreso Ecológico</h1>
+          <p className="text-secondary fs-6">
             Tu impacto positivo en el planeta 🌍
           </p>
         </div>
 
         {/* ===== PERFIL DEL USUARIO ===== */}
         <div
-          className="glass-card p-4 rounded-4 shadow-lg text-center mb-5 mx-auto"
+          className="glass-card p-4 rounded-4 shadow-lg text-center mb-5 mx-auto w-100"
           style={{ maxWidth: 700 }}
         >
           <img
@@ -101,34 +103,35 @@ export default function MiProgreso({ auth }) {
             className="rounded-circle bg-white p-2 shadow-sm mb-3"
             style={{ width: 90, height: 90 }}
           />
-          <h3 className="fw-bold text-success mb-1">
+
+          <h3 className="fw-bold text-success mb-1 fs-4 text-break">
             {auth.user.nombres} {auth.user.apellidos}
           </h3>
-          <p className="text-secondary mb-2">
+
+          <p className="text-secondary mb-2 fs-6">
             Ecorreciclador Nivel {Math.floor(nivel / 20) + 1}
           </p>
-          <h4 className="fw-semibold text-success">
-            🏆 Posición #{stats.posicion || "—"} en el ranking nacional
-          </h4>
+
+          <h5 className="fw-semibold text-success fs-6">
+            🏆 Posición #{stats.posicion || "—"} a nivel nacional
+          </h5>
 
           {/* Barra de nivel */}
-          <div
-            className="progress mt-3"
-            style={{ height: "18px", borderRadius: "12px" }}
-          >
+          <div className="progress mt-3" style={{ height: 18, borderRadius: 12 }}>
             <div
               className="progress-bar bg-success progress-animated"
               role="progressbar"
-              style={{ width: `${nivel}%`, borderRadius: "12px" }}
+              style={{ width: `${nivel}%`, borderRadius: 12 }}
             ></div>
           </div>
+
           <p className="small text-secondary mt-2">
             Nivel {Math.floor(nivel / 20) + 1} — {stats.puntaje} puntos 🌱
           </p>
         </div>
 
         {/* ===== MÉTRICAS ===== */}
-        <div className="row g-4 text-center mb-5">
+        <div className="row g-3 text-center mb-4">
           <MetricCard
             color="#00c896"
             icon="bi bi-stars"
@@ -150,50 +153,68 @@ export default function MiProgreso({ auth }) {
           <MetricCard
             color="#005f3a"
             icon="bi bi-geo-alt"
-            title="Visitas a Puntos Verdes"
+            title="Visitas"
             value={`${stats.visitas}`}
           />
         </div>
 
         {/* ===== GRÁFICOS ===== */}
-        <div className="row g-4 justify-content-center">
-          <div className="col-lg-6">
+        <div className="row g-4 mb-4">
+          <div className="col-12 col-lg-6">
             <div className="card shadow-lg border-0 p-4 rounded-4 h-100">
-              <h5 className="fw-bold text-success mb-3 text-center">
+              <h5 className="fw-bold text-success text-center mb-3 fs-5">
                 📈 Progreso Semanal
               </h5>
+
               <Bar
                 data={barData}
-                options={{ plugins: { legend: { display: false } } }}
+                options={{
+                  plugins: { legend: { display: false } },
+                  responsive: true,
+                  maintainAspectRatio: false,
+                }}
+                height={250}
               />
             </div>
           </div>
-          <div className="col-lg-6">
+
+          <div className="col-12 col-lg-6">
             <div className="card shadow-lg border-0 p-4 rounded-4 h-100">
-              <h5 className="fw-bold text-success mb-3 text-center">
+              <h5 className="fw-bold text-success text-center mb-3 fs-5">
                 🧩 Tipos de Material Reciclado
               </h5>
-              <Doughnut data={doughnutData} />
+
+              <Doughnut
+                data={doughnutData}
+                options={{
+                  plugins: { legend: { position: "bottom" } },
+                  responsive: true,
+                  maintainAspectRatio: false,
+                }}
+                height={250}
+              />
             </div>
           </div>
         </div>
 
         {/* ===== LOGROS ===== */}
-        <div className="text-center mt-5">
-          <h4 className="fw-bold text-success mb-4">🎖️ Tus Logros Ecológicos</h4>
-          <div className="d-flex flex-wrap justify-content-center gap-3">
-            <span className="badge bg-success-subtle text-success p-3 rounded-4 shadow-sm">
-              🌱 Primer reciclaje completado
-            </span>
-            <span className="badge bg-success-subtle text-success p-3 rounded-4 shadow-sm">
-              ♻️ 10 materiales reciclados
-            </span>
-            <span className="badge bg-success-subtle text-success p-3 rounded-4 shadow-sm">
-              🏅 Nivel {Math.floor(nivel / 20) + 1} alcanzado
-            </span>
-            <span className="badge bg-success-subtle text-success p-3 rounded-4 shadow-sm">
-              ⚡ Ahorro energético notable
-            </span>
+        <div className="text-center mt-4 mb-5">
+          <h4 className="fw-bold text-success mb-3 fs-5">🎖️ Tus Logros</h4>
+
+          <div className="d-flex flex-wrap justify-content-center gap-2 px-2">
+            {[
+              "🌱 Primer reciclaje completado",
+              "♻️ 10 materiales reciclados",
+              `🏅 Nivel ${Math.floor(nivel / 20) + 1} alcanzado`,
+              "⚡ Ahorro energético notable",
+            ].map((logro, i) => (
+              <span
+                key={i}
+                className="badge bg-success-subtle text-success p-3 rounded-4 shadow-sm"
+              >
+                {logro}
+              </span>
+            ))}
           </div>
         </div>
       </div>
@@ -201,53 +222,63 @@ export default function MiProgreso({ auth }) {
       {/* ===== ESTILOS ===== */}
       <style>{`
         .text-eco { color: #00c896 !important; }
+
         .glass-card {
           background: rgba(255,255,255,0.9);
-          backdrop-filter: blur(14px);
+          backdrop-filter: blur(12px);
           border: 1px solid rgba(0,150,100,0.2);
-          transition: all 0.3s ease;
+          transition: 0.25s ease;
         }
-        .glass-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,150,100,0.25); }
-        .progress-bar { transition: width 1.5s ease; }
-        .progress-animated { animation: ecoProgress 3s ease-in-out infinite alternate; }
-        @keyframes ecoProgress { 0% { filter: brightness(0.9); } 100% { filter: brightness(1.3); } }
+        .glass-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 12px 40px rgba(0,150,100,0.25);
+        }
+
+        .progress-animated {
+          animation: ecoPulse 2.8s ease-in-out infinite alternate;
+        }
+        @keyframes ecoPulse {
+          0% { filter: brightness(0.9); }
+          100% { filter: brightness(1.25); }
+        }
 
         body[data-theme="dark"] {
-          background: #0b1510 !important;
-          color: #eaeaea !important;
+          background: #08120b !important;
         }
         body[data-theme="dark"] .glass-card {
           background: rgba(0,40,25,0.85);
-          border: 1px solid rgba(0,255,180,0.3);
-          color: #f0fff0 !important;
-          box-shadow: 0 10px 40px rgba(0,255,180,0.12);
+          border: 1px solid rgba(0,255,180,0.25);
+          color: #eaffef;
         }
         body[data-theme="dark"] .card {
-          background: rgba(25,25,25,0.95);
+          background: rgba(25,25,25,0.95) !important;
           border: 1px solid rgba(255,255,255,0.1);
-          color: #f5f5f5;
+          color: #eaeaea;
         }
       `}</style>
     </UserLayout>
   );
 }
 
-/* ===== COMPONENTE DE MÉTRICA ===== */
+/* ===== COMPONENTE TARJETA ===== */
 function MetricCard({ color, icon, title, value }) {
   return (
-    <div className="col-6 col-lg-3">
+    <div className="col-6 col-md-3">
       <div
-        className="card border-0 shadow-lg rounded-4 p-4 text-center"
+        className="card border-0 shadow-lg rounded-4 p-3 h-100 text-center"
         style={{
-          background: `linear-gradient(145deg, ${color}15, #ffffff)`,
+          background: `linear-gradient(145deg, ${color}22, #ffffff)`,
           borderTop: `5px solid ${color}`,
         }}
       >
-        <div className="fs-2 mb-2" style={{ color }}>
+        <div className="fs-2 mb-1" style={{ color }}>
           <i className={icon}></i>
         </div>
-        <h6 className="fw-semibold mb-1">{title}</h6>
-        <h5 className="fw-bold text-dark">{value}</h5>
+
+        <h6 className="fw-semibold text-dark mb-1">{title}</h6>
+        <h5 className="fw-bold" style={{ color: "#003322" }}>
+          {value}
+        </h5>
       </div>
     </div>
   );

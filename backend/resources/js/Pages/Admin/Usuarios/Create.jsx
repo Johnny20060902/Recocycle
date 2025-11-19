@@ -20,7 +20,6 @@ export default function Create({ auth }) {
     document.body.getAttribute("data-theme") === "dark"
   );
 
-  // Detectar cambios globales del modo oscuro
   useEffect(() => {
     const observer = new MutationObserver(() =>
       setDarkMode(document.body.getAttribute("data-theme") === "dark")
@@ -33,7 +32,6 @@ export default function Create({ auth }) {
   const cardBg = darkMode ? "#181818" : "#ffffff";
   const textColor = darkMode ? "#eaeaea" : "#222";
 
-  // Guardar nuevo usuario
   const handleSubmit = (e) => {
     e.preventDefault();
     Swal.fire({
@@ -62,7 +60,8 @@ export default function Create({ auth }) {
 
   return (
     <AppLayout title="Registrar Usuario" auth={auth}>
-      <div className="container py-4 animate__animated animate__fadeIn">
+      <div className="container py-4 animate__animated animate__fadeInUp">
+        
         {/* ENCABEZADO */}
         <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4">
           <div>
@@ -73,7 +72,7 @@ export default function Create({ auth }) {
               👤 Registrar Nuevo Usuario
             </h2>
             <p className="mb-0" style={{ color: secondaryText }}>
-              Completa el formulario para agregar un nuevo usuario al sistema.
+              Completa el formulario para agregar un nuevo usuario.
             </p>
           </div>
 
@@ -94,14 +93,16 @@ export default function Create({ auth }) {
             transition: "all 0.3s ease",
           }}
         >
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <div className="row g-3">
+          <form onSubmit={handleSubmit}>
+
+            <div className="row g-4">
+              
               {/* NOMBRES */}
               <div className="col-md-6">
                 <label className="form-label fw-semibold">Nombres</label>
                 <input
                   type="text"
-                  className={`form-control ${
+                  className={`form-control form-control-lg rounded-3 ${
                     errors.nombres ? "is-invalid" : ""
                   }`}
                   value={data.nombres}
@@ -118,7 +119,7 @@ export default function Create({ auth }) {
                 <label className="form-label fw-semibold">Apellidos</label>
                 <input
                   type="text"
-                  className={`form-control ${
+                  className={`form-control form-control-lg rounded-3 ${
                     errors.apellidos ? "is-invalid" : ""
                   }`}
                   value={data.apellidos}
@@ -132,12 +133,12 @@ export default function Create({ auth }) {
 
               {/* EMAIL */}
               <div className="col-md-6">
-                <label className="form-label fw-semibold">
-                  Correo electrónico
-                </label>
+                <label className="form-label fw-semibold">Correo electrónico</label>
                 <input
                   type="email"
-                  className={`form-control ${errors.email ? "is-invalid" : ""}`}
+                  className={`form-control form-control-lg rounded-3 ${
+                    errors.email ? "is-invalid" : ""
+                  }`}
                   value={data.email}
                   onChange={(e) => setData("email", e.target.value)}
                   placeholder="usuario@ejemplo.com"
@@ -152,7 +153,7 @@ export default function Create({ auth }) {
                 <label className="form-label fw-semibold">Contraseña</label>
                 <input
                   type="password"
-                  className={`form-control ${
+                  className={`form-control form-control-lg rounded-3 ${
                     errors.password ? "is-invalid" : ""
                   }`}
                   value={data.password}
@@ -168,7 +169,9 @@ export default function Create({ auth }) {
               <div className="col-md-6">
                 <label className="form-label fw-semibold">Rol del usuario</label>
                 <select
-                  className={`form-select ${errors.role ? "is-invalid" : ""}`}
+                  className={`form-select form-select-lg rounded-3 ${
+                    errors.role ? "is-invalid" : ""
+                  }`}
                   value={data.role}
                   onChange={(e) => setData("role", e.target.value)}
                 >
@@ -185,7 +188,9 @@ export default function Create({ auth }) {
               <div className="col-md-6">
                 <label className="form-label fw-semibold">Estado</label>
                 <select
-                  className={`form-select ${errors.estado ? "is-invalid" : ""}`}
+                  className={`form-select form-select-lg rounded-3 ${
+                    errors.estado ? "is-invalid" : ""
+                  }`}
                   value={data.estado}
                   onChange={(e) => setData("estado", e.target.value)}
                 >
@@ -197,22 +202,24 @@ export default function Create({ auth }) {
                   <div className="invalid-feedback">{errors.estado}</div>
                 )}
               </div>
+
             </div>
 
+            {/* BOTÓN */}
             <div className="d-flex justify-content-end mt-4">
               <button
                 type="submit"
                 disabled={processing}
-                className="btn btn-success rounded-pill shadow-sm fw-semibold d-flex align-items-center gap-2"
+                className="btn btn-success btn-lg rounded-pill px-4 shadow-sm fw-semibold d-flex align-items-center gap-2"
                 style={{
-                  background:
-                    "linear-gradient(90deg, #00c896 0%, #00d4a1 100%)",
+                  background: "linear-gradient(90deg, #00c896 0%, #00d4a1 100%)",
                 }}
               >
                 <i className="bi bi-person-plus-fill"></i>
                 {processing ? "Registrando..." : "Registrar usuario"}
               </button>
             </div>
+
           </form>
         </div>
       </div>

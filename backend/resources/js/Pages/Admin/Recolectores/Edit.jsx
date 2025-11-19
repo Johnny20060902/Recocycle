@@ -1,3 +1,5 @@
+/* global route */
+
 import { useForm, Link } from "@inertiajs/react";
 import Swal from "sweetalert2";
 import { useEffect, useState } from "react";
@@ -16,6 +18,7 @@ export default function Edit({ auth, recolector }) {
   const [darkMode, setDarkMode] = useState(
     document.body.getAttribute("data-theme") === "dark"
   );
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     const obs = new MutationObserver(() =>
@@ -47,9 +50,16 @@ export default function Edit({ auth, recolector }) {
     });
   };
 
+  // 🎨 Paleta visual
+  const cardBg = darkMode ? "#181818" : "#ffffff";
+  const textColor = darkMode ? "#eaeaea" : "#222";
+  const secondaryText = darkMode ? "#bdbdbd" : "#555";
+
   return (
     <AppLayout title="Editar Recolector" auth={auth}>
       <div className="container py-4 animate__animated animate__fadeIn">
+
+        {/* ====== ENCABEZADO ====== */}
         <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4">
           <div>
             <h2
@@ -58,7 +68,9 @@ export default function Edit({ auth, recolector }) {
             >
               ✏️ Editar Recolector
             </h2>
-            <p className="mb-0 text-muted">Actualiza los datos del recolector.</p>
+            <p className="mb-0" style={{ color: secondaryText }}>
+              Actualiza la información del recolector seleccionado.
+            </p>
           </div>
 
           <Link
@@ -69,14 +81,18 @@ export default function Edit({ auth, recolector }) {
           </Link>
         </div>
 
+        {/* ====== TARJETA FORMULARIO ====== */}
         <div
           className="card border-0 shadow-lg rounded-4 p-4"
           style={{
-            background: darkMode ? "#181818" : "#ffffff",
-            color: darkMode ? "#eaeaea" : "#222",
+            background: cardBg,
+            color: textColor,
+            transition: "all .3s ease",
           }}
         >
           <form onSubmit={handleSubmit} className="row g-3">
+
+            {/* Nombres */}
             <div className="col-md-6">
               <label className="form-label fw-semibold">Nombres</label>
               <input
@@ -84,10 +100,12 @@ export default function Edit({ auth, recolector }) {
                 className={`form-control ${errors.nombres ? "is-invalid" : ""}`}
                 value={data.nombres}
                 onChange={(e) => setData("nombres", e.target.value)}
+                placeholder="Ej: Santiago"
               />
               {errors.nombres && <div className="invalid-feedback">{errors.nombres}</div>}
             </div>
 
+            {/* Apellidos */}
             <div className="col-md-6">
               <label className="form-label fw-semibold">Apellidos</label>
               <input
@@ -95,10 +113,12 @@ export default function Edit({ auth, recolector }) {
                 className={`form-control ${errors.apellidos ? "is-invalid" : ""}`}
                 value={data.apellidos}
                 onChange={(e) => setData("apellidos", e.target.value)}
+                placeholder="Ej: Abasto Ortega"
               />
               {errors.apellidos && <div className="invalid-feedback">{errors.apellidos}</div>}
             </div>
 
+            {/* Email */}
             <div className="col-md-6">
               <label className="form-label fw-semibold">Correo electrónico</label>
               <input
@@ -106,21 +126,41 @@ export default function Edit({ auth, recolector }) {
                 className={`form-control ${errors.email ? "is-invalid" : ""}`}
                 value={data.email}
                 onChange={(e) => setData("email", e.target.value)}
+                placeholder="usuario@ejemplo.com"
               />
               {errors.email && <div className="invalid-feedback">{errors.email}</div>}
             </div>
 
+            {/* Nueva contraseña con ojo */}
             <div className="col-md-6">
-              <label className="form-label fw-semibold">Nueva contraseña (opcional)</label>
-              <input
-                type="password"
-                className={`form-control ${errors.password ? "is-invalid" : ""}`}
-                value={data.password}
-                onChange={(e) => setData("password", e.target.value)}
-              />
-              {errors.password && <div className="invalid-feedback">{errors.password}</div>}
+              <label className="form-label fw-semibold">
+                Nueva contraseña (opcional)
+              </label>
+
+              <div className="input-group">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  className={`form-control ${errors.password ? "is-invalid" : ""}`}
+                  value={data.password}
+                  onChange={(e) => setData("password", e.target.value)}
+                  placeholder="Dejar vacío para mantener la actual"
+                />
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  tabIndex={-1}
+                >
+                  <i className={showPassword ? "bi bi-eye-slash-fill" : "bi bi-eye-fill"}></i>
+                </button>
+              </div>
+
+              {errors.password && (
+                <div className="invalid-feedback d-block">{errors.password}</div>
+              )}
             </div>
 
+            {/* Estado */}
             <div className="col-md-6">
               <label className="form-label fw-semibold">Estado</label>
               <select
@@ -135,18 +175,22 @@ export default function Edit({ auth, recolector }) {
               {errors.estado && <div className="invalid-feedback">{errors.estado}</div>}
             </div>
 
+            {/* Botón Guardar */}
             <div className="d-flex justify-content-end mt-4">
               <button
                 type="submit"
                 disabled={processing}
-                className="btn btn-success rounded-pill shadow-sm fw-semibold d-flex align-items-center gap-2"
+                className="btn btn-success rounded-pill shadow-sm fw-semibold d-flex align-items-center gap-2 px-4 py-2"
                 style={{
                   background: "linear-gradient(90deg, #00c896 0%, #00d4a1 100%)",
+                  boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
                 }}
               >
-                <i className="bi bi-save2"></i> Guardar cambios
+                <i className="bi bi-save2"></i>
+                {processing ? "Guardando..." : "Guardar cambios"}
               </button>
             </div>
+
           </form>
         </div>
       </div>

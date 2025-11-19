@@ -1,3 +1,5 @@
+/* global route */
+
 import { useEffect, useState } from "react";
 import AppLayout from "@/Layouts/AppLayout";
 import "animate.css";
@@ -7,7 +9,6 @@ export default function ReportesIndex({ auth }) {
     document.body.getAttribute("data-theme") === "dark"
   );
 
-  // Detectar cambios globales del modo oscuro
   useEffect(() => {
     const observer = new MutationObserver(() =>
       setDarkMode(document.body.getAttribute("data-theme") === "dark")
@@ -16,32 +17,30 @@ export default function ReportesIndex({ auth }) {
     return () => observer.disconnect();
   }, []);
 
-  // 🎨 Colores según modo
   const textColor = darkMode ? "#eaeaea" : "#222";
   const secondaryText = darkMode ? "#bdbdbd" : "#555";
-  const bgCard = darkMode ? "#181818" : "#ffffff";
+  const bgCard = darkMode ? "#1c1c1c" : "#ffffff";
 
   return (
     <AppLayout title="Módulo de Reportes" auth={auth}>
       <div className="container py-4 animate__animated animate__fadeIn">
+
         {/* ======= ENCABEZADO ======= */}
-        <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4">
-          <div>
-            <h2
-              className="fw-bold mb-1"
-              style={{ color: darkMode ? "#4dd2a1" : "#007bff" }}
-            >
-              📊 Reportes del Sistema
-            </h2>
-            <p className="mb-0" style={{ color: secondaryText }}>
-              Exporta información detallada de recolectores, usuarios y otras
-              actividades del sistema.
-            </p>
-          </div>
+        <div className="text-center mb-5">
+          <h2
+            className="fw-bold mb-2"
+            style={{ color: darkMode ? "#4dd2a1" : "#007bff" }}
+          >
+            📊 Reportes del Sistema
+          </h2>
+          <p className="fs-6" style={{ color: secondaryText }}>
+            Exportá información detallada de recolectores, usuarios y más.
+          </p>
         </div>
 
         {/* ======= TARJETAS ======= */}
         <div className="row g-4">
+
           {/* ===== Reporte de Recolectores ===== */}
           <div className="col-md-6">
             <div
@@ -52,41 +51,41 @@ export default function ReportesIndex({ auth }) {
                 transition: "all 0.3s ease",
               }}
             >
-              <i
-                className="bi bi-truck fs-1 mb-3"
-                style={{ color: "#00c896" }}
-              ></i>
-              <h5 className="fw-bold mb-2">Reporte de Recolectores</h5>
-              <p className="mb-3" style={{ color: secondaryText }}>
-                Genera un listado detallado de todos los recolectores activos,
-                con su estado, puntaje y calificación promedio.
+              <div className="mb-3">
+                <i
+                  className="bi bi-truck fs-1"
+                  style={{ color: "#00c896" }}
+                ></i>
+              </div>
+
+              <h4 className="fw-bold mb-2">Reporte de Recolectores</h4>
+              <p className="mb-4 px-3" style={{ color: secondaryText }}>
+                Listado detallado de recolectores activos con su puntaje,
+                calificación, estado y métricas principales.
               </p>
 
-              <div className="d-flex justify-content-center gap-3">
-                {/* Ver PDF en nueva pestaña */}
+              <div className="d-flex flex-column flex-sm-row justify-content-center gap-3">
                 <a
                   href={route("admin.reportes.recolectores.pdf")}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn btn-success rounded-pill shadow-sm fw-semibold d-flex align-items-center justify-content-center gap-2"
+                  className="btn btn-success rounded-pill px-4 fw-semibold shadow-sm d-flex align-items-center gap-2"
                   style={{
                     background:
                       "linear-gradient(90deg, #00c896 0%, #00d4a1 100%)",
-                    boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
                   }}
                 >
-                  <i className="bi bi-file-earmark-pdf-fill"></i> Ver PDF
+                  <i className="bi bi-file-earmark-pdf-fill"></i>
+                  Ver PDF
                 </a>
 
-                {/* Descargar PDF */}
                 <a
                   href={route("admin.reportes.recolectores.descargar")}
-                  className="btn btn-outline-success rounded-pill fw-semibold d-flex align-items-center justify-content-center gap-2"
-                  style={{
-                    border: "2px solid #00c896",
-                  }}
+                  className="btn btn-outline-success rounded-pill px-4 fw-semibold d-flex align-items-center gap-2"
+                  style={{ borderWidth: "2px" }}
                 >
-                  <i className="bi bi-download"></i> Descargar
+                  <i className="bi bi-download"></i>
+                  Descargar
                 </a>
               </div>
             </div>
@@ -102,41 +101,41 @@ export default function ReportesIndex({ auth }) {
                 transition: "all 0.3s ease",
               }}
             >
-              <i
-                className="bi bi-people-fill fs-1 mb-3"
-                style={{ color: "#007bff" }}
-              ></i>
-              <h5 className="fw-bold mb-2">Reporte de Usuarios</h5>
-              <p className="mb-3" style={{ color: secondaryText }}>
-                Genera un reporte PDF con todos los usuarios registrados en el
-                sistema y su estado actual.
+              <div className="mb-3">
+                <i
+                  className="bi bi-people-fill fs-1"
+                  style={{ color: "#007bff" }}
+                ></i>
+              </div>
+
+              <h4 className="fw-bold mb-2">Reporte de Usuarios</h4>
+              <p className="mb-4 px-3" style={{ color: secondaryText }}>
+                Genera un PDF con todos los usuarios registrados, su rol, estado
+                y actividad dentro del sistema.
               </p>
 
-              <div className="d-flex justify-content-center gap-3">
-                {/* Ver PDF */}
+              <div className="d-flex flex-column flex-sm-row justify-content-center gap-3">
                 <a
                   href={route("admin.reportes.usuarios.pdf")}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn btn-primary rounded-pill shadow-sm fw-semibold d-flex align-items-center justify-content-center gap-2"
+                  className="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm d-flex align-items-center gap-2"
                   style={{
                     background:
                       "linear-gradient(90deg, #0066ff 0%, #0099ff 100%)",
-                    boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
                   }}
                 >
-                  <i className="bi bi-file-earmark-pdf-fill"></i> Ver PDF
+                  <i className="bi bi-file-earmark-pdf-fill"></i>
+                  Ver PDF
                 </a>
 
-                {/* Descargar */}
                 <a
                   href={route("admin.reportes.usuarios.descargar")}
-                  className="btn btn-outline-primary rounded-pill fw-semibold d-flex align-items-center justify-content-center gap-2"
-                  style={{
-                    border: "2px solid #007bff",
-                  }}
+                  className="btn btn-outline-primary rounded-pill px-4 fw-semibold d-flex align-items-center gap-2"
+                  style={{ borderWidth: "2px" }}
                 >
-                  <i className="bi bi-download"></i> Descargar
+                  <i className="bi bi-download"></i>
+                  Descargar
                 </a>
               </div>
             </div>
@@ -147,30 +146,29 @@ export default function ReportesIndex({ auth }) {
         <div className="row mt-4 g-4">
           <div className="col-md-6">
             <div
-              className="card shadow rounded-4 p-4 text-center border-0 opacity-75"
+              className="card border-0 rounded-4 shadow-sm p-4 text-center opacity-75"
               style={{
-                background: darkMode ? "#222" : "#f5f5f5",
+                background: darkMode ? "#222" : "#f2f2f2",
                 color: secondaryText,
               }}
             >
               <i className="bi bi-bar-chart-line fs-2 mb-2 text-warning"></i>
               <h6 className="fw-semibold">
-                Reporte de Reciclajes (en desarrollo)
+                Reporte de Reciclajes (próximamente)
               </h6>
             </div>
           </div>
+
           <div className="col-md-6">
             <div
-              className="card shadow rounded-4 p-4 text-center border-0 opacity-75"
+              className="card border-0 rounded-4 shadow-sm p-4 text-center opacity-75"
               style={{
-                background: darkMode ? "#222" : "#f5f5f5",
+                background: darkMode ? "#222" : "#f2f2f2",
                 color: secondaryText,
               }}
             >
               <i className="bi bi-award fs-2 mb-2 text-success"></i>
-              <h6 className="fw-semibold">
-                Reporte de Premios (en desarrollo)
-              </h6>
+              <h6 className="fw-semibold">Reporte de Premios (próximamente)</h6>
             </div>
           </div>
         </div>

@@ -6,17 +6,18 @@ export default function PremiosIndex({ auth, premios = [] }) {
   return (
     <UserLayout title="Premios del Mes" auth={auth}>
       <div className="container py-5 animate__animated animate__fadeIn">
-        {/* ======= ENCABEZADO PERSONALIZADO ======= */}
-        <div className="text-center mb-5">
-          <h1 className="fw-bold text-success mb-2">🏆 Premios Disponibles</h1>
+
+        {/* ENCABEZADO */}
+        <div className="text-center mb-5 px-3">
+          <h1 className="fw-bold text-success fs-3">🏆 Premios Disponibles</h1>
 
           {user ? (
-            <p className="fs-5 text-secondary mb-1">
+            <p className="fs-6 text-secondary mb-1">
               👋 ¡Hola,{" "}
               <span className="fw-bold text-success">
                 {user.nombres} {user.apellidos}
               </span>
-              ! Estas son las recompensas disponibles por tu esfuerzo ecológico. 🌿
+              ! Estas son tus recompensas ecológicas 🌿
             </p>
           ) : (
             <p className="text-secondary mb-1">
@@ -25,31 +26,31 @@ export default function PremiosIndex({ auth, premios = [] }) {
           )}
 
           <p className="text-muted small">
-            *Recuerda que los premios cambian cada mes según tu desempeño en el ranking.*
+            *Los premios cambian cada mes según tu ranking.*
           </p>
         </div>
 
-        {/* ======= LISTA DE PREMIOS ======= */}
-        <div className="row justify-content-center">
+        {/* LISTA DE PREMIOS */}
+        <div className="row g-4 justify-content-center">
           {premios.length > 0 ? (
             premios.map((premio) => (
               <div
                 key={premio.id}
-                className="col-md-6 col-lg-4 mb-4 d-flex align-items-stretch"
+                className="col-12 col-sm-10 col-md-6 col-lg-4 d-flex"
               >
                 <div
-                  className="card border-0 shadow-lg w-100 text-center hover-shadow"
+                  className="card border-0 shadow-lg w-100 hover-shadow"
                   style={{
                     borderRadius: "1rem",
-                    background: "linear-gradient(145deg, #edfff8, #ffffff)",
-                    transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                    background: "linear-gradient(145deg,#edfff8,#ffffff)",
+                    transition: "transform .2s ease, box-shadow .2s ease",
                   }}
                 >
-                  {/* === Imagen o ícono === */}
+                  {/* Imagen */}
                   <div
-                    className="card-img-top d-flex align-items-center justify-content-center bg-light"
+                    className="d-flex align-items-center justify-content-center bg-light"
                     style={{
-                      height: "200px",
+                      height: "210px",
                       borderTopLeftRadius: "1rem",
                       borderTopRightRadius: "1rem",
                     }}
@@ -58,9 +59,9 @@ export default function PremiosIndex({ auth, premios = [] }) {
                       <img
                         src={`/storage/${premio.archivo}`}
                         alt={premio.nombre}
-                        className="img-fluid rounded"
+                        className="img-fluid"
                         style={{
-                          maxHeight: "180px",
+                          maxHeight: "200px",
                           objectFit: "contain",
                         }}
                       />
@@ -72,12 +73,11 @@ export default function PremiosIndex({ auth, premios = [] }) {
                     )}
                   </div>
 
-                  {/* === Contenido === */}
-                  <div className="card-body">
-                    <h5 className="fw-bold text-success mb-2">
-                      {premio.nombre}
-                    </h5>
-                    <p className="text-secondary mb-3">
+                  {/* Contenido */}
+                  <div className="card-body text-center px-3">
+                    <h5 className="fw-bold text-success">{premio.nombre}</h5>
+
+                    <p className="text-secondary mb-3 small">
                       Fecha límite:{" "}
                       <span className="fw-semibold text-dark">
                         {premio.fecha_limite
@@ -99,9 +99,8 @@ export default function PremiosIndex({ auth, premios = [] }) {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="btn btn-success rounded-pill shadow-sm fw-semibold d-flex align-items-center justify-content-center gap-2 mx-auto px-4 py-2"
-                        style={{ width: "fit-content" }}
                       >
-                        <i className="bi bi-eye-fill"></i> Ver Anuncio
+                        <i className="bi bi-eye-fill"></i> Ver Premio
                       </a>
                     )}
                   </div>
@@ -111,23 +110,19 @@ export default function PremiosIndex({ auth, premios = [] }) {
           ) : (
             <div className="col-12 text-center mt-5">
               <i className="bi bi-emoji-frown text-secondary fs-1"></i>
-              <p className="text-secondary mt-2">
-                Aún no hay premios disponibles por el momento.
+              <p className="text-secondary mt-3">
+                Aún no hay premios disponibles en este momento.
               </p>
             </div>
           )}
         </div>
       </div>
 
-      {/* ======= ESTILOS DARK MODE ======= */}
+      {/* DARK MODE */}
       <style>{`
         body[data-theme="dark"] .card {
-          background: linear-gradient(145deg, #1b1b1b, #262626) !important;
+          background: linear-gradient(145deg,#1b1b1b,#262626) !important;
           color: #e6e6e6 !important;
-        }
-        body[data-theme="dark"] .card-footer {
-          background: #1b1b1b !important;
-          color: #b5b5b5 !important;
         }
         body[data-theme="dark"] .text-success {
           color: #00d4a1 !important;
@@ -138,7 +133,7 @@ export default function PremiosIndex({ auth, premios = [] }) {
         }
         body[data-theme="dark"] .hover-shadow:hover {
           transform: translateY(-4px);
-          box-shadow: 0 6px 14px rgba(0, 255, 150, 0.15);
+          box-shadow: 0 6px 15px rgba(0,255,150,0.18);
         }
         body[data-theme="dark"] .bg-light {
           background-color: #1b1b1b !important;

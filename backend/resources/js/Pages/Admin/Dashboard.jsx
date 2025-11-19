@@ -136,6 +136,7 @@ export default function AdminDashboard({
   return (
     <AppLayout auth={auth} title="Dashboard del Administrador">
       <div className="container py-4 animate__animated animate__fadeIn">
+        
         {/* === ENCABEZADO === */}
         <motion.div
           initial={{ opacity: 0, y: -30 }}
@@ -146,16 +147,19 @@ export default function AdminDashboard({
           <h1 className="fw-bold text-success">
             🌿 Panel Administrativo de Recocycle
           </h1>
-          <p className="fs-5" style={{ color: darkMode ? "#bfbfbf" : "#555" }}>
-            Bienvenido, {auth.user?.nombres || "Administrador"}. Supervisá el
-            impacto ecológico en tiempo real ♻️
+          <p
+            className="fs-5"
+            style={{ color: darkMode ? "#bfbfbf" : "#555" }}
+          >
+            Bienvenido, {auth.user?.nombres}. Supervisá el impacto ecológico en
+            tiempo real ♻️
           </p>
         </motion.div>
 
-        {/* === TARJETAS DE USUARIOS === */}
+        {/* === TARJETAS === */}
         <motion.div
           className="row g-3 mb-4"
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.7 }}
         >
@@ -187,13 +191,12 @@ export default function AdminDashboard({
           ].map((card, i) => (
             <div className="col-md-3 col-6" key={i}>
               <motion.div
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.06 }}
                 className="card shadow-sm border-0 rounded-4 text-center p-3"
                 style={{
                   background: bgCard,
                   color: textColor,
-                  borderTop: `3px solid var(--bs-${card.color})`,
-                  transition: "background 0.3s ease",
+                  borderTop: `4px solid var(--bs-${card.color})`,
                 }}
               >
                 <div className={`text-${card.color} fs-2`}>
@@ -209,11 +212,11 @@ export default function AdminDashboard({
         {/* === TARJETAS SECUNDARIAS === */}
         <motion.div
           className="row g-3 mb-4"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ duration: 0.7 }}
         >
-          {[
+          {[ 
             {
               title: "Recolectores activos",
               icon: "bi-lightning-charge-fill",
@@ -234,8 +237,7 @@ export default function AdminDashboard({
                 style={{
                   background: bgCard,
                   color: textColor,
-                  borderTop: `3px solid var(--bs-${card.color})`,
-                  transition: "background 0.3s ease",
+                  borderTop: `4px solid var(--bs-${card.color})`,
                 }}
               >
                 <div className={`text-${card.color} fs-2`}>
@@ -248,7 +250,7 @@ export default function AdminDashboard({
           ))}
         </motion.div>
 
-        {/* === GRÁFICOS === */}
+        {/* === GRÁFICOS PRINCIPALES === */}
         <div className="row g-4">
           {/* 📊 Barras semanales */}
           <motion.div
@@ -284,34 +286,31 @@ export default function AdminDashboard({
               <h6 className="fw-bold text-secondary mb-3">
                 Distribución de materiales ♻️
               </h6>
+
               <div className="d-flex align-items-center">
                 <div style={{ width: "60%", height: "160px" }}>
                   <Doughnut
                     data={distribucionData}
                     options={{
                       plugins: {
-                        legend: {
-                          position: "bottom",
-                          labels: { color: textColor },
-                        },
+                        legend: { position: "bottom", labels: { color: textColor } },
                       },
                     }}
                   />
                 </div>
+
                 <div className="ms-3 small">
                   <ul className="list-unstyled mb-0">
                     {distribucion.length ? (
                       distribucion.map((m, i) => (
                         <li key={i} className="mb-1">
                           <span
-                            className="me-2 rounded-circle d-inline-block"
+                            className="me-2 d-inline-block rounded-circle"
                             style={{
-                              background:
-                                distribucionData.datasets[0].backgroundColor[
-                                i % 7
-                                ],
                               width: "10px",
                               height: "10px",
+                              background:
+                                distribucionData.datasets[0].backgroundColor[i % 7],
                             }}
                           ></span>
                           {m.nombre}: <b>{m.porcentaje}%</b>
@@ -325,7 +324,7 @@ export default function AdminDashboard({
               </div>
             </div>
 
-            {/* 📈 Visitas mensuales */}
+            {/* 📈 Trafico / visitas */}
             <div
               className="card shadow-sm border-0 rounded-4 p-4"
               style={{ background: bgCard, color: textColor }}
@@ -349,7 +348,7 @@ export default function AdminDashboard({
 
         {/* === BLOQUES INFERIORES === */}
         <div className="row mt-4 g-4">
-          {[
+          {[ 
             {
               title: "Recolectores destacados",
               color: "success",
@@ -363,7 +362,7 @@ export default function AdminDashboard({
               color: "primary",
               items: [
                 "♻️ Nuevo reciclaje registrado",
-                "🏭 Empresa verificada con éxito",
+                "🏭 Empresa verificada",
                 "🏆 Usuario alcanzó 1000 puntos",
                 "🌍 Impacto global actualizado",
               ],
@@ -382,7 +381,7 @@ export default function AdminDashboard({
             <motion.div
               key={i}
               className="col-lg-4"
-              initial={{ opacity: 0, y: 40 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 + i * 0.2 }}
             >
@@ -393,14 +392,17 @@ export default function AdminDashboard({
                 <h6 className={`fw-bold text-${block.color} mb-3`}>
                   {block.title}
                 </h6>
+
+                {/* === LISTA: RECOLECTORES DESTACADOS === */}
                 {i === 0 && (
                   <ul className="list-group list-group-flush">
                     {block.items.length ? (
                       block.items.map((r, j) => (
                         <li
                           key={j}
-                          className={`list-group-item d-flex justify-content-between align-items-center ${darkMode ? "bg-dark text-light" : ""
-                            }`}
+                          className={`list-group-item d-flex justify-content-between align-items-center ${
+                            darkMode ? "bg-dark text-light" : ""
+                          }`}
                         >
                           <span>{r.name}</span>
                           <span className="badge bg-success-subtle text-success rounded-pill">
@@ -415,26 +417,32 @@ export default function AdminDashboard({
                     )}
                   </ul>
                 )}
+
+                {/* === LISTA: ACTIVIDADES === */}
                 {i === 1 && (
                   <ul className="list-group list-group-flush small">
                     {block.items.map((a, j) => (
                       <li
                         key={j}
-                        className={`list-group-item ${darkMode ? "bg-dark text-light" : ""
-                          }`}
+                        className={`list-group-item ${
+                          darkMode ? "bg-dark text-light" : ""
+                        }`}
                       >
                         {a}
                       </li>
                     ))}
                   </ul>
                 )}
+
+                {/* === RESUMEN MENSUAL === */}
                 {i === 2 && (
                   <ul className="list-group list-group-flush">
                     {block.items.map(([k, v], j) => (
                       <li
                         key={j}
-                        className={`list-group-item d-flex justify-content-between ${darkMode ? "bg-dark text-light" : ""
-                          }`}
+                        className={`list-group-item d-flex justify-content-between ${
+                          darkMode ? "bg-dark text-light" : ""
+                        }`}
                       >
                         <span>{k}</span> <b>{v}</b>
                       </li>

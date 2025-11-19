@@ -12,7 +12,9 @@ export default function Ranking({ auth }) {
     localStorage.getItem("recolectorTheme") === "dark"
   );
 
-  // 🔹 Cargar ranking desde el backend
+  /* ============================
+      🔹 Cargar ranking desde Backend
+  ============================ */
   useEffect(() => {
     axios
       .get(route("recolector.ranking.data"))
@@ -23,7 +25,9 @@ export default function Ranking({ auth }) {
       .finally(() => setLoading(false));
   }, []);
 
-  // 🔹 Detecta cambios de modo oscuro
+  /* ============================
+      🔹 Detectar cambios de modo oscuro
+  ============================ */
   useEffect(() => {
     const listener = () => {
       setDarkMode(localStorage.getItem("recolectorTheme") === "dark");
@@ -32,15 +36,20 @@ export default function Ranking({ auth }) {
     return () => window.removeEventListener("storage", listener);
   }, []);
 
-  // 🖼️ Determina qué imagen mostrar
+  /* ============================
+      🖼️ Foto del recolector
+  ============================ */
   const getFotoUrl = (reco) => {
-    if (reco.imagen) return reco.imagen; // viene del backend ya procesada
-    if (reco.foto_url)
+    if (reco.imagen) return reco.imagen;
+
+    if (reco.foto_url) {
       return reco.foto_url.startsWith("http")
         ? reco.foto_url
         : `/storage/${reco.foto_url}`;
-    if (reco.empresa_logo)
-      return `/storage/${reco.empresa_logo}`;
+    }
+
+    if (reco.empresa_logo) return `/storage/${reco.empresa_logo}`;
+
     return "/images/default-recolector.png";
   };
 
@@ -51,17 +60,18 @@ export default function Ranking({ auth }) {
           darkMode ? "text-light" : "text-dark"
         } animate__animated animate__fadeIn`}
       >
+        {/* ======= TITULO ======= */}
         <h1 className="fw-bold text-success mb-3 text-center">
           🏆 Ranking de Recolectores Recocycle
         </h1>
         <p className="text-center text-muted mb-5">
-          Clasificación actual entre todos los recolectores activos según
-          puntaje y desempeño.
+          Clasificación actual según puntaje, calificaciones y desempeño.
         </p>
 
+        {/* ======= LOADING ======= */}
         {loading ? (
           <div className="text-center py-5">
-            <div className="spinner-border text-success" role="status"></div>
+            <div className="spinner-border text-success"></div>
             <p className="mt-3 text-muted">Cargando ranking...</p>
           </div>
         ) : recolectores.length === 0 ? (
@@ -73,6 +83,7 @@ export default function Ranking({ auth }) {
             No hay recolectores registrados aún.
           </div>
         ) : (
+          /* ======= TABLA ======= */
           <div
             className={`table-responsive shadow-lg rounded-4 ${
               darkMode ? "bg-dark text-light" : "bg-white"
@@ -105,15 +116,15 @@ export default function Ranking({ auth }) {
                   .map((reco, index) => (
                     <tr
                       key={reco.id}
-                      className={`align-middle ${
+                      className={
                         reco.id === auth.user.id
                           ? darkMode
                             ? "table-success border-success border-2"
                             : "table-light border-success border-2"
                           : ""
-                      }`}
+                      }
                     >
-                      {/* 🥇 POSICIÓN */}
+                      {/* POSICION */}
                       <td className="text-center fw-bold fs-5">
                         {index + 1 === 1 ? (
                           <span className="text-warning">🥇</span>
@@ -126,7 +137,7 @@ export default function Ranking({ auth }) {
                         )}
                       </td>
 
-                      {/* 👤 DATOS DEL RECOLECTOR */}
+                      {/* INFORMACION DEL RECOLECTOR */}
                       <td>
                         <div className="d-flex align-items-center gap-3">
                           <img
@@ -142,9 +153,9 @@ export default function Ranking({ auth }) {
                                   ? "#00b894"
                                   : "#dee2e6",
                             }}
-                            onError={(e) => {
-                              e.target.src = "/images/default-recolector.png";
-                            }}
+                            onError={(e) =>
+                              (e.target.src = "/images/default-recolector.png")
+                            }
                           />
                           <div>
                             <h6 className="mb-0 fw-semibold">
@@ -157,7 +168,7 @@ export default function Ranking({ auth }) {
                         </div>
                       </td>
 
-                      {/* ⭐ PUNTAJE */}
+                      {/* PUNTAJE */}
                       <td
                         className={`text-center fw-bold ${
                           darkMode ? "text-info" : "text-success"
@@ -166,7 +177,7 @@ export default function Ranking({ auth }) {
                         {reco.puntaje ?? 0}
                       </td>
 
-                      {/* 🏅 NIVEL */}
+                      {/* NIVEL */}
                       <td className="text-center">
                         {reco.puntaje >= 200 ? (
                           <span className="badge bg-success shadow-sm">
@@ -183,7 +194,7 @@ export default function Ranking({ auth }) {
                         )}
                       </td>
 
-                      {/* 🚚 RECOLECCIONES */}
+                      {/* CANTIDAD DE RECOLECCIONES */}
                       <td className="text-center text-muted fw-semibold">
                         {reco.recolecciones || 0}
                       </td>

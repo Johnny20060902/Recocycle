@@ -1,7 +1,13 @@
 /* global route */
 
 import { useEffect, useState, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  useMap,
+} from "react-leaflet";
 import L from "leaflet";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -9,7 +15,9 @@ import RecolectorLayout from "@/Layouts/RecolectorLayout";
 import "leaflet/dist/leaflet.css";
 import "animate.css";
 
-// ===== ÍCONOS PERSONALIZADOS =====
+/* ============================
+   ÍCONOS PERSONALIZADOS
+============================ */
 const iconRecolector = new L.Icon({
   iconUrl: "/images/recolector-icon.png",
   iconSize: [38, 38],
@@ -30,7 +38,9 @@ const iconEnCamino = new L.Icon({
   iconSize: [32, 32],
 });
 
-// ===== Hook para centrar mapa =====
+/* ============================
+   SET VIEW MAP
+============================ */
 function SetViewToCurrent({ coords }) {
   const map = useMap();
 
@@ -41,18 +51,14 @@ function SetViewToCurrent({ coords }) {
   return null;
 }
 
-/**
- * 📸 Carrusel simple de fotos en el popup
- */
+/* ============================
+   CARRUSEL DE FOTOS
+============================ */
 function FotoCarousel({ fotos = [] }) {
   const [index, setIndex] = useState(0);
 
   if (!Array.isArray(fotos) || fotos.length === 0) {
-    return (
-      <p className="text-muted small mb-2">
-        📷 Sin fotos cargadas para este punto.
-      </p>
-    );
+    return <p className="text-muted small mb-2">📷 Sin fotos cargadas.</p>;
   }
 
   const normalizarSrc = (foto) => {
@@ -72,14 +78,8 @@ function FotoCarousel({ fotos = [] }) {
   };
 
   const current = normalizarSrc(fotos[index]);
-
-  if (!current) {
-    return (
-      <p className="text-muted small mb-2">
-        📷 No se pudo cargar la imagen.
-      </p>
-    );
-  }
+  if (!current)
+    return <p className="text-muted small">📷 Error cargando imagen.</p>;
 
   return (
     <div className="mt-2">
@@ -106,17 +106,16 @@ function FotoCarousel({ fotos = [] }) {
                 e.stopPropagation();
                 setIndex((prev) => (prev - 1 + fotos.length) % fotos.length);
               }}
-              style={{ opacity: 0.85 }}
             >
               ‹
             </button>
+
             <button
               className="btn btn-sm btn-light position-absolute top-50 end-0 translate-middle-y"
               onClick={(e) => {
                 e.stopPropagation();
                 setIndex((prev) => (prev + 1) % fotos.length);
               }}
-              style={{ opacity: 0.85 }}
             >
               ›
             </button>
@@ -133,9 +132,9 @@ function FotoCarousel({ fotos = [] }) {
   );
 }
 
-/**
- * 🧭 BOTONES DE ACCIÓN POR ESTADO
- */
+/* ============================
+   BOTONES DEL RECOLECTOR
+============================ */
 function AccionesRecolector({ punto, onActualizar }) {
   const postAccion = async (ruta, mensajeExito) => {
     try {
@@ -148,7 +147,6 @@ function AccionesRecolector({ punto, onActualizar }) {
       });
       onActualizar();
     } catch (err) {
-      console.error(err);
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -188,7 +186,6 @@ function AccionesRecolector({ punto, onActualizar }) {
           acc[op.id] = op.texto;
           return acc;
         }, {}),
-        inputPlaceholder: "Elegí fecha y hora",
         showCancelButton: true,
         confirmButtonText: "Enviar solicitud",
         cancelButtonText: "Cancelar",
@@ -197,7 +194,7 @@ function AccionesRecolector({ punto, onActualizar }) {
 
       if (seleccion === undefined) return;
 
-      const elegido = opciones.find((o) => o.id === parseInt(seleccion));
+      const elegido = opciones.find((o) => o.id === Number(seleccion));
 
       Swal.fire({
         title: "Enviando solicitud...",
@@ -215,7 +212,6 @@ function AccionesRecolector({ punto, onActualizar }) {
       Swal.fire({
         icon: "success",
         title: "Solicitud enviada",
-        text: "Esperá la confirmación del usuario.",
         timer: 1600,
         showConfirmButton: false,
       });
@@ -223,12 +219,7 @@ function AccionesRecolector({ punto, onActualizar }) {
       onActualizar();
     } catch (error) {
       Swal.close();
-      Swal.fire(
-        "Error",
-        error?.response?.data?.message ||
-          "Ocurrió un error al enviar la solicitud.",
-        "error"
-      );
+      Swal.fire("Error", "No se pudo enviar la solicitud.", "error");
     }
   };
 
@@ -277,9 +268,9 @@ function AccionesRecolector({ punto, onActualizar }) {
   );
 }
 
-/**
- * 🌍 COMPONENTE PRINCIPAL
- */
+/* ============================
+   COMPONENTE PRINCIPAL
+============================ */
 export default function MapaRecolector({
   auth,
   categorias = [],
@@ -292,11 +283,7 @@ export default function MapaRecolector({
 
   const obtenerUbicacion = () => {
     if (!navigator.geolocation) {
-      Swal.fire(
-        "⚠️ Error",
-        "Tu navegador no soporta geolocalización.",
-        "error"
-      );
+      Swal.fire("Error", "Tu navegador no soporta geolocalización.", "error");
       return;
     }
 
@@ -311,20 +298,10 @@ export default function MapaRecolector({
         setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         setLoading(false);
         Swal.close();
-        Swal.fire({
-          icon: "success",
-          title: "Ubicación actualizada",
-          timer: 1300,
-          showConfirmButton: false,
-        });
       },
       () => {
         Swal.close();
-        Swal.fire(
-          "Error",
-          "No se pudo obtener tu ubicación.",
-          "error"
-        );
+        Swal.fire("Error", "No se pudo obtener tu ubicación.", "error");
       }
     );
   };
@@ -334,23 +311,22 @@ export default function MapaRecolector({
       const { data } = await axios.get(route("recolector.puntos"));
       setPuntos(Array.isArray(data) ? data : []);
       setLoading(false);
-    } catch (error) {
-      console.error("Error cargando puntos:", error);
+    } catch {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    const interval = setInterval(() => fetchPuntos(), 5000);
+    const interval = setInterval(fetchPuntos, 5000);
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
-    const init = async () => {
+    const cargar = async () => {
       if (initialPuntos.length > 0) setLoading(false);
       await fetchPuntos();
     };
-    init();
+    cargar();
   }, []);
 
   const iconoPorEstado = (estado) => {
@@ -375,20 +351,30 @@ export default function MapaRecolector({
     <RecolectorLayout title="Mapa de Recolección" auth={auth}>
       <div className="container py-4 animate__animated animate__fadeIn">
 
+        {/* ====== HEADER ====== */}
         <div className="mb-4">
-          <div className="card border-0 shadow-sm">
+          <div className="card border-0 shadow-sm rounded-4">
             <div className="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
               <div>
-                <h2 className="fw-bold text-success mb-1">♻️ Mapa de recolección</h2>
-                <p className="text-muted mb-0">
+                <h2 className="fw-bold text-success mb-1 fs-4">
+                  ♻️ Mapa de recolección
+                </h2>
+                <p className="text-muted mb-0 small">
                   Revisá fotos, horarios y enviá tu solicitud al usuario.
                 </p>
               </div>
-              <div className="d-flex flex-column flex-sm-row gap-2">
-                <button onClick={obtenerUbicacion} className="btn btn-success">
+
+              <div className="d-flex flex-column flex-sm-row gap-2 w-100 w-sm-auto">
+                <button
+                  onClick={obtenerUbicacion}
+                  className="btn btn-success w-100"
+                >
                   📍 Mi ubicación
                 </button>
-                <button onClick={fetchPuntos} className="btn btn-outline-success">
+                <button
+                  onClick={fetchPuntos}
+                  className="btn btn-outline-success w-100"
+                >
                   🔄 Actualizar
                 </button>
               </div>
@@ -396,7 +382,7 @@ export default function MapaRecolector({
           </div>
         </div>
 
-        {/* MAPA */}
+        {/* ====== MAPA ====== */}
         {loading ? (
           <div
             className="d-flex flex-column align-items-center justify-content-center"
@@ -418,18 +404,24 @@ export default function MapaRecolector({
               center={coords || [-17.3895, -66.1568]}
               zoom={13}
               scrollWheelZoom
+              style={{ height: "100%", width: "100%" }}
             >
               <TileLayer
                 attribution="&copy; OpenStreetMap"
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
 
+              {/* ===== Ubicación del recolector ===== */}
               {coords && (
-                <Marker position={[coords.lat, coords.lng]} icon={iconRecolector}>
+                <Marker
+                  position={[coords.lat, coords.lng]}
+                  icon={iconRecolector}
+                >
                   <Popup>📍 Tu ubicación actual</Popup>
                 </Marker>
               )}
 
+              {/* ===== Marcadores de puntos ===== */}
               {puntosFiltrados.map((p, i) => (
                 <Marker
                   key={p.id ?? i}
@@ -442,15 +434,16 @@ export default function MapaRecolector({
                         {p.usuario?.nombres || "Usuario"}
                       </h6>
 
-                      <p className="mb-1 small">
+                      <p className="small mb-1">
                         <strong>Material:</strong> {p.material} <br />
                         <strong>Fecha:</strong> {p.fecha_disponible} <br />
-                        <strong>Horario:</strong> {p.hora_desde} - {p.hora_hasta} <br />
+                        <strong>Horario:</strong> {p.hora_desde} –{" "}
+                        {p.hora_hasta} <br />
                         <strong>Estado:</strong>{" "}
                         <span className="badge bg-secondary">{p.estado}</span>
                       </p>
 
-                      {/* 🔵 INFORMACIÓN DE SOLICITUD */}
+                      {/* INFO SOLICITUD */}
                       {p.solicitud_estado && (
                         <div className="mb-2">
                           <strong>Solicitud:</strong>{" "}
@@ -460,7 +453,9 @@ export default function MapaRecolector({
                             </span>
                           )}
                           {p.solicitud_estado === "aceptada" && (
-                            <span className="badge bg-success">Aceptada ✓</span>
+                            <span className="badge bg-success">
+                              Aceptada ✓
+                            </span>
                           )}
                           {p.solicitud_estado === "rechazada" && (
                             <span className="badge bg-danger">Rechazada ✗</span>
@@ -468,21 +463,23 @@ export default function MapaRecolector({
 
                           {p.solicitud_fecha && (
                             <p className="small text-muted mb-0 mt-1">
-                              <strong>Fecha solicitada:</strong>{" "}
-                              {p.solicitud_fecha}
+                              <strong>Fecha:</strong> {p.solicitud_fecha}
                               <br />
-                              <strong>Horario:</strong>{" "}
-                              {p.solicitud_hora_desde} – {p.solicitud_hora_hasta}
+                              {p.solicitud_hora_desde} –{" "}
+                              {p.solicitud_hora_hasta}
                             </p>
                           )}
                         </div>
                       )}
 
-                      {/* 📸 FOTOS */}
+                      {/* FOTOS */}
                       <FotoCarousel fotos={p.fotos || []} />
 
-                      {/* BOTONES */}
-                      <AccionesRecolector punto={p} onActualizar={fetchPuntos} />
+                      {/* ACCIONES */}
+                      <AccionesRecolector
+                        punto={p}
+                        onActualizar={fetchPuntos}
+                      />
                     </div>
                   </Popup>
                 </Marker>
@@ -493,6 +490,17 @@ export default function MapaRecolector({
           </div>
         )}
       </div>
+
+      {/* ====== DARK MODE ====== */}
+      <style>{`
+        body[data-theme="dark"] .card {
+          background: #1f1f1f !important;
+          color: #e6e6e6 !important;
+        }
+        body[data-theme="dark"] .text-muted {
+          color: #bfbfbf !important;
+        }
+      `}</style>
     </RecolectorLayout>
   );
 }

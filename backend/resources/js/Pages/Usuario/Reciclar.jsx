@@ -10,7 +10,7 @@ export default function Reciclar({ auth, categorias }) {
   const { data, setData, processing, reset } = useForm({
     categoria_id: "",
     descripcion: "",
-    fechas: [], // 👈 el array que usaremos para enviar varios horarios
+    fechas: [],
     latitud: "",
     longitud: "",
     imagenes: [],
@@ -58,14 +58,14 @@ export default function Reciclar({ auth, categorias }) {
     setData("imagenes", files);
   };
 
-  // ✅ Enviar formulario
+  // ⬆ Enviar formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!data.latitud) {
       Swal.fire(
-        "🌎 Ubicación requerida",
-        "Por favor, marcá tu ubicación en el mapa antes de enviar.",
+        "🌍 Ubicación requerida",
+        "Por favor marcá tu ubicación en el mapa.",
         "warning"
       );
       return;
@@ -74,7 +74,7 @@ export default function Reciclar({ auth, categorias }) {
     if (!data.fechas.length) {
       Swal.fire(
         "📅 Horario requerido",
-        "Debes añadir al menos una fecha y hora disponibles.",
+        "Debes añadir al menos un día y rango horario.",
         "warning"
       );
       return;
@@ -86,11 +86,9 @@ export default function Reciclar({ auth, categorias }) {
     formData.append("descripcion", data.descripcion);
     formData.append("latitud", data.latitud);
     formData.append("longitud", data.longitud);
-
-    // 🔁 Enviar array de fechas en formato JSON
     formData.append("fechas", JSON.stringify(data.fechas));
 
-    if (data.imagenes && data.imagenes.length > 0) {
+    if (data.imagenes?.length) {
       data.imagenes.forEach((img) => formData.append("imagenes[]", img));
     }
 
@@ -101,48 +99,52 @@ export default function Reciclar({ auth, categorias }) {
 
       Swal.fire({
         icon: "success",
-        title: "♻️ ¡Reciclaje registrado!",
-        text: "Gracias por aportar al medio ambiente 🌍",
-        confirmButtonText: "Volver al inicio",
+        title: "♻ ¡Reciclaje registrado!",
+        text: "Gracias por aportar al medio ambiente 🌎",
         confirmButtonColor: "#00c896",
-        background: "#ffffff",
-      }).then((r) => {
-        if (r.isConfirmed) Inertia.visit(route("usuario.dashboard"));
+      }).then(() => {
+        Inertia.visit(route("usuario.dashboard"));
       });
 
       reset();
       setImagenesPreview([]);
     } catch (error) {
-      console.error("Error al registrar reciclaje:", error);
-      Swal.fire("❌ Error", "Revisá los campos e intentá nuevamente.", "error");
+      Swal.fire("❌ Error", "Hubo un problema. Intentá nuevamente.", "error");
     }
   };
 
   return (
     <UserLayout title="Reciclaje Responsable" auth={auth}>
-      <div className="container py-5 animate__animated animate__fadeIn">
+      <div className="py-4 px-2 animate__animated animate__fadeIn">
+        
+        {/* CARD PRINCIPAL */}
         <div
-          className="card shadow-lg border-0 rounded-4 p-4 mx-auto"
+          className="card shadow-lg border-0 rounded-4 p-4 mx-auto w-100"
           style={{
             maxWidth: "900px",
-            background: "linear-gradient(145deg, var(--bs-light), #ffffff 70%)",
+            background: "linear-gradient(145deg, #fdfdfd, #ffffff 70%)",
           }}
         >
           {/* ======= TÍTULO ======= */}
-          <div className="text-center mb-4">
-            <h2 className="fw-bold text-success mb-1">♻️ Registro de Reciclaje</h2>
-            <p className="text-secondary">
-              ¡Completá los datos y ayudá a construir un planeta más limpio 🌿!
+          <div className="text-center mb-4 px-2">
+            <h2 className="fw-bold text-success mb-1 text-wrap">
+              ♻ Registro de Reciclaje
+            </h2>
+
+            <p className="text-secondary text-sm">
+              ¡Completá los datos y ayudá a construir un planeta más limpio 🌍!
             </p>
           </div>
 
-          {/* ======= FORMULARIO ======= */}
-          <form onSubmit={handleSubmit}>
+          {/* FORM */}
+          <form onSubmit={handleSubmit} className="w-100">
+
             {/* === CATEGORÍA === */}
             <div className="mb-4">
               <label className="form-label fw-bold text-success">
                 Categoría del material
               </label>
+
               <select
                 className="form-select border-success-subtle shadow-sm"
                 value={data.categoria_id}
@@ -160,7 +162,10 @@ export default function Reciclar({ auth, categorias }) {
 
             {/* === DESCRIPCIÓN === */}
             <div className="mb-4">
-              <label className="form-label fw-bold text-success">Descripción</label>
+              <label className="form-label fw-bold text-success">
+                Descripción
+              </label>
+
               <textarea
                 className="form-control border-success-subtle shadow-sm"
                 rows="3"
@@ -175,8 +180,9 @@ export default function Reciclar({ auth, categorias }) {
               <label className="form-label fw-bold text-success">
                 Días y horarios disponibles
               </label>
-              <div className="row g-2 align-items-end">
-                <div className="col-md-3">
+
+              <div className="row g-2">
+                <div className="col-12 col-sm-4">
                   <label className="form-label small text-muted">Fecha</label>
                   <input
                     type="date"
@@ -185,7 +191,8 @@ export default function Reciclar({ auth, categorias }) {
                     onChange={(e) => setFecha(e.target.value)}
                   />
                 </div>
-                <div className="col-md-3">
+
+                <div className="col-6 col-sm-4">
                   <label className="form-label small text-muted">Desde</label>
                   <input
                     type="time"
@@ -194,7 +201,8 @@ export default function Reciclar({ auth, categorias }) {
                     onChange={(e) => setHoraDesde(e.target.value)}
                   />
                 </div>
-                <div className="col-md-3">
+
+                <div className="col-6 col-sm-4">
                   <label className="form-label small text-muted">Hasta</label>
                   <input
                     type="time"
@@ -203,17 +211,19 @@ export default function Reciclar({ auth, categorias }) {
                     onChange={(e) => setHoraHasta(e.target.value)}
                   />
                 </div>
-                <div className="col-md-3 text-center">
+
+                <div className="col-12">
                   <button
                     type="button"
                     onClick={handleAddHorario}
-                    className="btn btn-success rounded-pill w-100 fw-semibold shadow-sm"
+                    className="btn btn-success w-100 fw-semibold shadow-sm mt-2"
                   >
-                    ➕ Añadir
+                    ➕ Añadir horario
                   </button>
                 </div>
               </div>
 
+              {/* LISTA DE HORARIOS */}
               {data.fechas.length > 0 && (
                 <ul className="list-group mt-3 shadow-sm">
                   {data.fechas.map((r, i) => (
@@ -221,9 +231,10 @@ export default function Reciclar({ auth, categorias }) {
                       key={i}
                       className="list-group-item d-flex justify-content-between align-items-center border-start border-success-subtle"
                     >
-                      <span className="text-success fw-semibold">
+                      <span className="text-success fw-semibold small">
                         📅 {r.fecha} — ⏰ {r.hora_desde} - {r.hora_hasta}
                       </span>
+
                       <button
                         type="button"
                         onClick={() => handleRemoveHorario(i)}
@@ -242,6 +253,7 @@ export default function Reciclar({ auth, categorias }) {
               <label className="form-label fw-bold text-success">
                 📸 Fotos del material (máx. 5)
               </label>
+
               <input
                 id="imagenes"
                 type="file"
@@ -250,50 +262,56 @@ export default function Reciclar({ auth, categorias }) {
                 onChange={handleImageUpload}
                 className="form-control mb-3 border-success-subtle shadow-sm"
               />
-              <div className="d-flex gap-3 justify-content-center flex-wrap">
-                {[0, 1, 2, 3, 4].map((index) => (
+
+              {/* Previews responsivas */}
+              <div className="d-flex flex-wrap justify-content-center gap-3">
+                {[...Array(5)].map((_, index) => (
                   <div
                     key={index}
-                    className="border border-success-subtle rounded-3 d-flex align-items-center justify-content-center overflow-hidden position-relative"
+                    className="rounded-3 overflow-hidden border border-success-subtle shadow-sm"
                     style={{
-                      width: "150px",
-                      height: "150px",
-                      backgroundColor: "#f9fef9",
-                      boxShadow: "inset 0 0 6px rgba(0,0,0,0.05)",
+                      width: "140px",
+                      height: "140px",
+                      backgroundColor: "#f7fdf7",
                     }}
                   >
                     {imagenesPreview[index] ? (
                       <img
                         src={imagenesPreview[index]}
                         alt={`preview-${index}`}
-                        className="w-100 h-100 object-fit-cover rounded-3"
+                        className="w-100 h-100 object-fit-cover"
                       />
                     ) : (
-                      <span className="text-success small">Sin imagen</span>
+                      <div className="w-100 h-100 d-flex justify-content-center align-items-center text-muted small">
+                        Sin imagen
+                      </div>
                     )}
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* === MAPA === */}
+            {/* === MAPA RESPONSIVO === */}
             <div className="mb-4">
               <label className="form-label fw-bold text-success">
                 📍 Marque su ubicación
               </label>
-              <MapaReciclaje
-                onLocationSelect={(coords) => {
-                  setData("latitud", coords.latitud);
-                  setData("longitud", coords.longitud);
-                }}
-              />
+
+              <div className="w-100 rounded overflow-hidden">
+                <MapaReciclaje
+                  onLocationSelect={(coords) => {
+                    setData("latitud", coords.latitud);
+                    setData("longitud", coords.longitud);
+                  }}
+                />
+              </div>
             </div>
 
-            {/* === BOTÓN FINAL === */}
-            <div className="text-center mt-4">
+            {/* === BOTON FINAL === */}
+            <div className="text-center">
               <button
                 type="submit"
-                className="btn btn-success px-5 py-2 rounded-pill fw-semibold shadow-sm"
+                className="btn btn-success px-5 py-2 rounded-pill fw-semibold shadow-sm w-100"
                 disabled={processing}
               >
                 {processing ? "Enviando..." : "✅ Confirmar registro"}
@@ -303,25 +321,23 @@ export default function Reciclar({ auth, categorias }) {
         </div>
       </div>
 
-      {/* ======= ESTILOS MODO OSCURO ======= */}
+      {/* DARKMODE */}
       <style>{`
         body[data-theme="dark"] .card {
-          background: linear-gradient(145deg, #1a1a1a, #222) !important;
+          background: linear-gradient(145deg, #1a1a1a, #202020) !important;
           color: #e6e6e6 !important;
         }
-        body[data-theme="dark"] label,
-        body[data-theme="dark"] .form-label {
-          color: #00d4a1 !important;
+        body[data-theme="dark"] label {
+          color: #00c896 !important;
         }
         body[data-theme="dark"] input,
         body[data-theme="dark"] select,
         body[data-theme="dark"] textarea {
-          background-color: #0f0f0f !important;
+          background: #0e0e0e !important;
           color: #f0f0f0 !important;
-          border: 1px solid #00c896 !important;
         }
         body[data-theme="dark"] .list-group-item {
-          background-color: #121212 !important;
+          background: #111 !important;
           color: #e6e6e6 !important;
         }
       `}</style>
