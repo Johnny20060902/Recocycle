@@ -3,16 +3,38 @@ import { Link } from "@inertiajs/react";
 import RatingModal from "@/Components/RatingModal";
 import Swal from "sweetalert2";
 import axios from "axios";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 /**
  * 📦 Vista de historial de reciclajes / puntos del usuario
  * Incluye control de solicitudes del recolector (aceptar / rechazar)
- * y calificación final.
+ * y actualización en tiempo real.
  */
 export default function MisReciclajes({ auth, puntos = [] }) {
   const [items, setItems] = useState(puntos);
   const [fotoIndexByPunto, setFotoIndexByPunto] = useState({});
+
+  // 🔥 Para no refrescar si no cambió nada
+  const ultimaDataRef = useRef(JSON.stringify(puntos));
+
+  // 🔄 AUTO-REFRESH CADA 5 SEGUNDOS
+  useEffect(() => {
+    const intervalo = setInterval(async () => {
+      try {
+        const { data } = await axios.get(route("usuario.puntos.list"));
+        const nuevaData = JSON.stringify(data.puntos);
+
+        if (nuevaData !== ultimaDataRef.current) {
+          ultimaDataRef.current = nuevaData;
+          setItems(data.puntos);
+        }
+      } catch (err) {
+        console.error("❌ Error refrescando puntos:", err);
+      }
+    }, 5000);
+
+    return () => clearInterval(intervalo);
+  }, []);
 
   // 🔄 Actualizar datos localmente después de aceptar/rechazar
   const refrescarEstadoLocal = (puntoId, nuevosDatos) => {
@@ -23,7 +45,8 @@ export default function MisReciclajes({ auth, puntos = [] }) {
 
   const manejarSolicitud = async (puntoId, accion) => {
     const confirm = await Swal.fire({
-      title: accion === "aceptar" ? "✅ Aceptar solicitud" : "❌ Rechazar solicitud",
+      title:
+        accion === "aceptar" ? "✅ Aceptar solicitud" : "❌ Rechazar solicitud",
       text:
         accion === "aceptar"
           ? "¿Confirmás que este recolector retire tu reciclaje?"
@@ -55,10 +78,13 @@ export default function MisReciclajes({ auth, puntos = [] }) {
         showConfirmButton: false,
       });
 
-      refrescarEstadoLocal(puntoId, data.punto || {
-        solicitud_estado: accion === "aceptar" ? "aceptada" : "rechazada",
-        estado: accion === "aceptar" ? "asignado" : "pendiente",
-      });
+      refrescarEstadoLocal(
+        puntoId,
+        data.punto || {
+          solicitud_estado: accion === "aceptar" ? "aceptada" : "rechazada",
+          estado: accion === "aceptar" ? "asignado" : "pendiente",
+        }
+      );
     } catch (error) {
       console.error(error);
       Swal.fire(
@@ -108,7 +134,7 @@ export default function MisReciclajes({ auth, puntos = [] }) {
   const cambiarFoto = (puntoId, total, direccion) => {
     setFotoIndexByPunto((prev) => {
       const actual = prev[puntoId] ?? 0;
-      const nuevo = (actual + direccion + total) % total; // -1 o +1
+      const nuevo = (actual + direccion + total) % total;
       return { ...prev, [puntoId]: nuevo };
     });
   };
@@ -116,16 +142,13 @@ export default function MisReciclajes({ auth, puntos = [] }) {
   return (
     <UserLayout title="Mis Reciclajes" auth={auth}>
       <div className="container py-5 animate__animated animate__fadeIn">
-        {/* ====== ENCABEZADO ====== */}
         <div className="text-center mb-5">
           <h1 className="fw-bold text-success">♻️ Mis Reciclajes Registrados</h1>
           <p className="text-secondary fs-5">
-            Consultá el estado de tus recolecciones y gestioná las solicitudes
-            entrantes 🌎
+            Consultá el estado de tus recolecciones y gestioná las solicitudes entrantes 🌎
           </p>
         </div>
 
-        {/* ====== LISTADO ====== */}
         {items.length > 0 ? (
           <div className="row justify-content-center g-4">
             {items.map((p) => {
@@ -173,7 +196,6 @@ export default function MisReciclajes({ auth, puntos = [] }) {
                         </div>
                       )}
 
-                      {/* Botones de navegación de fotos */}
                       {totalFotos > 1 && (
                         <>
                           <button
@@ -267,7 +289,9 @@ export default function MisReciclajes({ auth, puntos = [] }) {
                               </button>
                               <button
                                 className="btn btn-sm btn-danger"
-                                onClick={() => manejarSolicitud(p.id, "rechazar")}
+                                onClick={() =>
+                                  manejarSolicitud(p.id, "rechazar")
+                                }
                               >
                                 ❌ Rechazar
                               </button>
@@ -275,30 +299,22 @@ export default function MisReciclajes({ auth, puntos = [] }) {
                           </div>
                         )}
 
-                      {/* === Solicitud aceptada === */}
                       {p.solicitud_estado === "aceptada" && (
                         <div className="alert alert-success small py-2 mt-3 text-center">
                           ✅ Solicitud aceptada. El recolector está en camino.
                         </div>
                       )}
 
-                      {/* === Solicitud rechazada === */}
                       {p.solicitud_estado === "rechazada" && (
                         <div className="alert alert-danger small py-2 mt-3 text-center">
                           ❌ Rechazaste esta solicitud.
                         </div>
                       )}
 
-                      {/* === Recolector asignado === */}
                       {p.recolector && p.solicitud_estado === "aceptada" && (
                         <div className="mt-3 small text-secondary text-center">
                           👷‍♂️ <strong>{p.recolector.nombres}</strong>{" "}
                           {p.recolector.apellidos}
-                          {p.recolector.puntaje && (
-                            <span className="ms-1 text-warning">
-                              ({p.recolector.puntaje} ⭐)
-                            </span>
-                          )}
                         </div>
                       )}
                     </div>
@@ -323,7 +339,6 @@ export default function MisReciclajes({ auth, puntos = [] }) {
                           />
                         )}
 
-                        {/* Botón Eliminar (solo si no está completado) */}
                         {["pendiente", "rechazada"].includes(p.estado) && (
                           <button
                             type="button"
@@ -341,11 +356,8 @@ export default function MisReciclajes({ auth, puntos = [] }) {
             })}
           </div>
         ) : (
-          // ====== SIN REGISTROS ======
           <div className="text-center py-5">
-            <h4 className="text-secondary">
-              😔 Aún no registraste ningún reciclaje.
-            </h4>
+            <h4 className="text-secondary">😔 Aún no registraste ningún reciclaje.</h4>
             <p>¡Comenzá a reciclar hoy y sumá puntos ecológicos! 🌱</p>
             <Link
               href={route("usuario.reciclar")}
@@ -356,32 +368,6 @@ export default function MisReciclajes({ auth, puntos = [] }) {
           </div>
         )}
       </div>
-
-      {/* ====== DARK MODE ====== */}
-      <style>{`
-        body[data-theme="dark"] .card {
-          background: linear-gradient(145deg, #1b1b1b, #262626) !important;
-          color: #e6e6e6 !important;
-        }
-        body[data-theme="dark"] .card-footer {
-          background: #1b1b1b !important;
-          color: #b5b5b5 !important;
-        }
-        body[data-theme="dark"] .text-secondary,
-        body[data-theme="dark"] .text-muted {
-          color: #b5b5b5 !important;
-        }
-        body[data-theme="dark"] .text-success {
-          color: #00d4a1 !important;
-        }
-        body[data-theme="dark"] .bg-light {
-          background-color: #1b1b1b !important;
-        }
-        body[data-theme="dark"] .hover-shadow:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 6px 14px rgba(0, 255, 150, 0.15);
-        }
-      `}</style>
     </UserLayout>
   );
 }
