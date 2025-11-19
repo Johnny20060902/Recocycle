@@ -5,11 +5,24 @@ namespace App\Http\Controllers\Recolector;
 use App\Http\Controllers\Controller;
 use App\Models\PuntoRecoleccion;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
     /**
-     * 📊 Retorna datos reales del recolector para el dashboard
+     * 🟢 Vista principal del Dashboard del recolector
+     */
+    public function index()
+    {
+        return Inertia::render('Recolector/Dashboard', [
+            'auth' => [
+                'user' => auth()->user(),
+            ],
+        ]);
+    }
+
+    /**
+     * 📊 Retorna datos reales del recolector para el dashboard (AJAX)
      */
     public function data()
     {
