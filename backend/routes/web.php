@@ -28,6 +28,7 @@ use App\Http\Controllers\Usuario\RankingController as UsuarioRankingController;
 // Flujo Recolector
 use App\Http\Controllers\Recolector\FlujoRecoleccionController;
 use App\Http\Controllers\Recolector\DashboardController;
+use App\Http\Controllers\Recolector\RankingController as RecolectorRankingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -59,7 +60,7 @@ Route::get('/usuario/login', fn() => Inertia::render('Auth/Login', ['role' => 'u
 */
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    // Redirección dinámica al dashboard según rol
+    // Redirección dinámica según rol
     Route::get('/dashboard', function () {
         $user = auth()->user();
 
@@ -70,7 +71,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         };
     })->name('dashboard');
 
-    // Perfil
+    // Perfil de usuario
     Route::get('/profile',  [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile',[ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile',[ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -101,37 +102,22 @@ Route::middleware(['auth', 'verified', 'role:admin'])
             ->except(['show']);
 
         // Reportes
-        Route::get('/reportes', [ReporteController::class, 'index'])
-            ->name('reportes.index');
-
-        Route::get('/reportes/recolectores/pdf', [ReporteController::class, 'recolectoresReporte'])
-            ->name('reportes.recolectores.pdf');
-
-        Route::get('/reportes/recolectores/descargar', [ReporteController::class, 'recolectoresDescargar'])
-            ->name('reportes.recolectores.descargar');
-
-        Route::get('/reportes/usuarios/pdf', [ReporteController::class, 'usuariosReporte'])
-            ->name('reportes.usuarios.pdf');
-
-        Route::get('/reportes/usuarios/descargar', [ReporteController::class, 'usuariosDescargar'])
-            ->name('reportes.usuarios.descargar');
+        Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
+        Route::get('/reportes/recolectores/pdf', [ReporteController::class, 'recolectoresReporte'])->name('reportes.recolectores.pdf');
+        Route::get('/reportes/recolectores/descargar', [ReporteController::class, 'recolectoresDescargar'])->name('reportes.recolectores.descargar');
+        Route::get('/reportes/usuarios/pdf', [ReporteController::class, 'usuariosReporte'])->name('reportes.usuarios.pdf');
+        Route::get('/reportes/usuarios/descargar', [ReporteController::class, 'usuariosDescargar'])->name('reportes.usuarios.descargar');
 
         // Empresas
         Route::resource('empresas', EmpresaController::class);
 
         // Calificaciones
-        Route::get('/calificaciones', [CalificacionController::class, 'index'])
-            ->name('calificaciones.index');
+        Route::get('/calificaciones', [CalificacionController::class, 'index'])->name('calificaciones.index');
 
         // Ranking
-        Route::get('/ranking', [AdminRankingController::class, 'index'])
-            ->name('ranking.index');
-
-        Route::post('/ranking/{usuario}/puntaje', [AdminRankingController::class, 'actualizarPuntaje'])
-            ->name('ranking.puntaje');
-
-        Route::post('/ranking/puntaje-masivo', [AdminRankingController::class, 'actualizarPuntajeMasivo'])
-            ->name('ranking.puntajeMasivo');
+        Route::get('/ranking', [AdminRankingController::class, 'index'])->name('ranking.index');
+        Route::post('/ranking/{usuario}/puntaje', [AdminRankingController::class, 'actualizarPuntaje'])->name('ranking.puntaje');
+        Route::post('/ranking/puntaje-masivo', [AdminRankingController::class, 'actualizarPuntajeMasivo'])->name('ranking.puntajeMasivo');
 
         // Premios
         Route::resource('premios', AdminPremioController::class)
@@ -140,7 +126,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])
 
 /*
 |--------------------------------------------------------------------------
-| PANEL USUARIO (LIMPIO Y ÚNICO)
+| PANEL USUARIO
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'verified', 'role:usuario'])
@@ -148,10 +134,9 @@ Route::middleware(['auth', 'verified', 'role:usuario'])
     ->as('usuario.')
     ->group(function () {
 
-        // Dashboard
         Route::get('/dashboard', [UsuarioController::class, 'dashboard'])->name('dashboard');
 
-        // Reciclajes
+        // Reciclaje
         Route::get('/reciclajes', [UsuarioReciclajeController::class, 'index'])->name('reciclajes.index');
         Route::get('/reciclar', [UsuarioReciclajeController::class, 'create'])->name('reciclar');
         Route::post('/reciclar', [UsuarioReciclajeController::class, 'store'])->name('reciclar.store');
@@ -189,7 +174,7 @@ Route::middleware(['auth', 'verified', 'role:recolector'])
     ->group(function () {
 
         // Dashboard
-        Route::get('/dashboard', fn() => Inertia::render('Recolector/Dashboard'))->name('dashboard');
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/dashboard/data', [DashboardController::class, 'data'])->name('dashboard.data');
 
         // Mapa
@@ -200,22 +185,18 @@ Route::middleware(['auth', 'verified', 'role:recolector'])
         Route::get('/puntos', [RecolectorController::class, 'puntos'])->name('puntos');
         Route::get('/puntos-cercanos', [RecolectorController::class, 'puntosCercanos'])->name('puntosCercanos');
 
-        // Rutas
-        Route::get('/rutas', fn() => Inertia::render('Recolector/Rutas'))->name('rutas');
-
         // Historial
         Route::get('/historial', [RecolectorController::class, 'historial'])->name('historial');
 
         // Ranking
         Route::get('/ranking', fn() => Inertia::render('Recolector/Ranking'))->name('ranking');
-        Route::get('/ranking/data', [\App\Http\Controllers\Recolector\RankingController::class, 'data'])
-            ->name('ranking.data');
+        Route::get('/ranking/data', [RecolectorRankingController::class, 'data'])->name('ranking.data');
 
-        // Flujo de recolección
-        Route::post('/puntos/{punto}/solicitar',      [FlujoRecoleccionController::class, 'solicitar'])->name('puntos.solicitar');
-        Route::post('/puntos/{punto}/en-camino',      [FlujoRecoleccionController::class, 'enCamino'])->name('puntos.enCamino');
-        Route::post('/puntos/{punto}/completar',      [FlujoRecoleccionController::class, 'completar'])->name('puntos.completar');
-        Route::post('/puntos/limpiar-pendientes',     [FlujoRecoleccionController::class, 'limpiarPendientes'])->name('puntos.limpiarPendientes');
+        // Flujo completo
+        Route::post('/puntos/{punto}/solicitar',  [FlujoRecoleccionController::class, 'solicitar'])->name('puntos.solicitar');
+        Route::post('/puntos/{punto}/en-camino', [FlujoRecoleccionController::class, 'enCamino'])->name('puntos.enCamino');
+        Route::post('/puntos/{punto}/completar', [FlujoRecoleccionController::class, 'completar'])->name('puntos.completar');
+        Route::post('/puntos/limpiar-pendientes', [FlujoRecoleccionController::class, 'limpiarPendientes'])->name('puntos.limpiarPendientes');
 
         // Calificaciones
         Route::post('/calificaciones', [CalificacionController::class, 'store'])->name('calificaciones.store');

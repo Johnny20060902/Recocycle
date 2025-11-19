@@ -63,13 +63,8 @@ function FotoCarousel({ fotos = [] }) {
 
     if (!src) return null;
 
-    // Si no viene con http ni empieza con /storage, asumimos que es un archivo en storage
     if (!src.startsWith("http")) {
-      if (src.startsWith("/")) {
-        // ya viene con slash, lo dejamos
-        return src;
-      }
-      // ruta típica de Laravel: storage/archivo.jpg
+      if (src.startsWith("/")) return src;
       return `/storage/${src}`;
     }
 
@@ -77,6 +72,7 @@ function FotoCarousel({ fotos = [] }) {
   };
 
   const current = normalizarSrc(fotos[index]);
+
   if (!current) {
     return (
       <p className="text-muted small mb-2">
@@ -84,18 +80,6 @@ function FotoCarousel({ fotos = [] }) {
       </p>
     );
   }
-
-  const handlePrev = (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setIndex((prev) => (prev - 1 + fotos.length) % fotos.length);
-  };
-
-  const handleNext = (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setIndex((prev) => (prev + 1) % fotos.length);
-  };
 
   return (
     <div className="mt-2">
@@ -118,14 +102,20 @@ function FotoCarousel({ fotos = [] }) {
           <>
             <button
               className="btn btn-sm btn-light position-absolute top-50 start-0 translate-middle-y"
-              onClick={handlePrev}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIndex((prev) => (prev - 1 + fotos.length) % fotos.length);
+              }}
               style={{ opacity: 0.85 }}
             >
               ‹
             </button>
             <button
               className="btn btn-sm btn-light position-absolute top-50 end-0 translate-middle-y"
-              onClick={handleNext}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIndex((prev) => (prev + 1) % fotos.length);
+              }}
               style={{ opacity: 0.85 }}
             >
               ›
@@ -167,10 +157,9 @@ function AccionesRecolector({ punto, onActualizar }) {
     }
   };
 
-  // ✅ Mostrar botón si el punto está pendiente y sin recolector
   const puedeEnviarSolicitud =
     punto.estado === "pendiente" &&
-    (punto.recolector_id === null || punto.recolector_id === undefined);
+    (!punto.recolector_id || punto.solicitud_estado === null);
 
   const solicitarRecoleccion = async () => {
     try {
@@ -208,7 +197,7 @@ function AccionesRecolector({ punto, onActualizar }) {
 
       if (seleccion === undefined) return;
 
-      const elegido = opciones.find((o) => o.id === parseInt(seleccion, 10));
+      const elegido = opciones.find((o) => o.id === parseInt(seleccion));
 
       Swal.fire({
         title: "Enviando solicitud...",
@@ -225,7 +214,7 @@ function AccionesRecolector({ punto, onActualizar }) {
       Swal.close();
       Swal.fire({
         icon: "success",
-        title: "Solicitud enviada ✅",
+        title: "Solicitud enviada",
         text: "Esperá la confirmación del usuario.",
         timer: 1600,
         showConfirmButton: false,
@@ -233,7 +222,6 @@ function AccionesRecolector({ punto, onActualizar }) {
 
       onActualizar();
     } catch (error) {
-      console.error(error);
       Swal.close();
       Swal.fire(
         "Error",
@@ -245,10 +233,10 @@ function AccionesRecolector({ punto, onActualizar }) {
   };
 
   return (
-    <div className="mt-2">
+    <div className="mt-3">
       {puedeEnviarSolicitud && (
         <button
-          className="btn btn-sm btn-success w-100 mb-1"
+          className="btn btn-sm btn-success w-100 mb-2"
           onClick={solicitarRecoleccion}
         >
           📅 Enviar solicitud
@@ -257,7 +245,7 @@ function AccionesRecolector({ punto, onActualizar }) {
 
       {punto.estado === "asignado" && (
         <button
-          className="btn btn-sm btn-primary w-100 mb-1"
+          className="btn btn-sm btn-primary w-100 mb-2"
           onClick={() =>
             postAccion("recolector.puntos.enCamino", "🚗 Marcado en camino")
           }
@@ -268,7 +256,7 @@ function AccionesRecolector({ punto, onActualizar }) {
 
       {punto.estado === "en_camino" && (
         <button
-          className="btn btn-sm btn-success w-100"
+          className="btn btn-sm btn-success w-100 mb-2"
           onClick={() =>
             postAccion(
               "recolector.puntos.completar",
@@ -281,7 +269,7 @@ function AccionesRecolector({ punto, onActualizar }) {
       )}
 
       {punto.estado === "completado" && (
-        <p className="text-muted small text-center mt-2 mb-0">
+        <p className="text-muted small text-center mt-2">
           📸 Recolección completada
         </p>
       )}
@@ -314,7 +302,6 @@ export default function MapaRecolector({
 
     Swal.fire({
       title: "Obteniendo ubicación...",
-      text: "Por favor, permite el acceso a tu ubicación.",
       allowOutsideClick: false,
       didOpen: () => Swal.showLoading(),
     });
@@ -326,18 +313,16 @@ export default function MapaRecolector({
         Swal.close();
         Swal.fire({
           icon: "success",
-          title: "Ubicación actualizada ✅",
+          title: "Ubicación actualizada",
           timer: 1300,
           showConfirmButton: false,
         });
       },
-      (err) => {
+      () => {
         Swal.close();
-        console.error(err);
-        setLoading(false);
         Swal.fire(
           "Error",
-          "No se pudo obtener tu ubicación. Revisá permisos del navegador.",
+          "No se pudo obtener tu ubicación.",
           "error"
         );
       }
@@ -355,35 +340,17 @@ export default function MapaRecolector({
     }
   };
 
-  const limpiarPendientes = async () => {
-    try {
-      await axios.post(route("recolector.puntos.limpiarPendientes"));
-    } catch (error) {
-      console.warn("No se pudieron limpiar pendientes:", error);
-    }
-  };
-
-  // 🔁 Auto-actualizar puntos cada 5 segundos
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      fetchPuntos();
-    }, 5000); // 5000 ms = 5 segundos
-
-    return () => clearInterval(intervalId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const interval = setInterval(() => fetchPuntos(), 5000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
-    const inicializar = async () => {
-      // Si ya vinieron puntos desde Inertia, no mostrés loader vacío
-      if (initialPuntos && initialPuntos.length > 0) {
-        setLoading(false);
-      }
-      await limpiarPendientes();
+    const init = async () => {
+      if (initialPuntos.length > 0) setLoading(false);
       await fetchPuntos();
     };
-    inicializar();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    init();
   }, []);
 
   const iconoPorEstado = (estado) => {
@@ -397,7 +364,6 @@ export default function MapaRecolector({
     }
   };
 
-  // 🔍 Filtrado de puntos según categoría seleccionada
   const puntosFiltrados = useMemo(() => {
     if (!categoriaSeleccionada) return puntos;
     return puntos.filter(
@@ -408,97 +374,23 @@ export default function MapaRecolector({
   return (
     <RecolectorLayout title="Mapa de Recolección" auth={auth}>
       <div className="container py-4 animate__animated animate__fadeIn">
-        {/* ENCABEZADO BONITO */}
+
         <div className="mb-4">
-          <div className="card border-0 shadow-sm bg-gradient">
+          <div className="card border-0 shadow-sm">
             <div className="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-              <div className="text-start">
-                <h2 className="fw-bold text-success mb-1">
-                  ♻️ Mapa de puntos de recolección
-                </h2>
+              <div>
+                <h2 className="fw-bold text-success mb-1">♻️ Mapa de recolección</h2>
                 <p className="text-muted mb-0">
-                  Seleccioná una categoría, revisá las fotos del material y
-                  enviá tu solicitud al usuario. 🌍
+                  Revisá fotos, horarios y enviá tu solicitud al usuario.
                 </p>
               </div>
               <div className="d-flex flex-column flex-sm-row gap-2">
-                <button
-                  onClick={obtenerUbicacion}
-                  className="btn btn-success shadow-sm"
-                >
-                  📍 Usar mi ubicación
+                <button onClick={obtenerUbicacion} className="btn btn-success">
+                  📍 Mi ubicación
                 </button>
-                <button
-                  onClick={fetchPuntos}
-                  className="btn btn-outline-success shadow-sm"
-                >
-                  🔄 Actualizar puntos
+                <button onClick={fetchPuntos} className="btn btn-outline-success">
+                  🔄 Actualizar
                 </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* LEYENDA DE ÍCONOS */}
-        <div className="row mb-3 g-2">
-          <div className="col-md-6">
-            <div className="card border-0 shadow-sm">
-              <div className="card-body py-2">
-                <div className="d-flex flex-wrap gap-3 align-items-center small">
-                  <span className="fw-semibold text-success me-2">
-                    🧭 Leyenda:
-                  </span>
-                  <span className="d-flex align-items-center gap-1">
-                    <img
-                      src="/images/punto-reciclaje.png"
-                      alt="pendiente"
-                      width={18}
-                      height={18}
-                    />
-                    Pendiente
-                  </span>
-                  <span className="d-flex align-items-center gap-1">
-                    <img
-                      src="/images/punto-en-camino.png"
-                      alt="en camino"
-                      width={18}
-                      height={18}
-                    />
-                    En camino
-                  </span>
-                  <span className="d-flex align-items-center gap-1">
-                    <img
-                      src="/images/punto-completado.png"
-                      alt="completado"
-                      width={18}
-                      height={18}
-                    />
-                    Completado
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 🔽 Filtro por categoría */}
-          <div className="col-md-6">
-            <div className="card border-0 shadow-sm">
-              <div className="card-body py-2">
-                <label className="form-label fw-semibold text-success mb-1">
-                  Filtrar por categoría
-                </label>
-                <select
-                  className="form-select border-success shadow-sm"
-                  value={categoriaSeleccionada}
-                  onChange={(e) => setCategoriaSeleccionada(e.target.value)}
-                >
-                  <option value="">Todas las categorías</option>
-                  {categorias.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.nombre}
-                    </option>
-                  ))}
-                </select>
               </div>
             </div>
           </div>
@@ -510,22 +402,16 @@ export default function MapaRecolector({
             className="d-flex flex-column align-items-center justify-content-center"
             style={{ height: "70vh" }}
           >
-            <div
-              className="spinner-border text-success mb-3"
-              role="status"
-              style={{ width: "3rem", height: "3rem" }}
-            ></div>
+            <div className="spinner-border text-success mb-3" />
             <p className="text-muted">Cargando mapa...</p>
           </div>
         ) : (
           <div
-            id="map"
             className="shadow-sm"
             style={{
               height: "75vh",
               borderRadius: "16px",
               overflow: "hidden",
-              border: "1px solid #e5e5e5",
             }}
           >
             <MapContainer
@@ -534,18 +420,16 @@ export default function MapaRecolector({
               scrollWheelZoom
             >
               <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
+                attribution="&copy; OpenStreetMap"
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
 
-              {/* 📍 Posición del recolector */}
               {coords && (
                 <Marker position={[coords.lat, coords.lng]} icon={iconRecolector}>
                   <Popup>📍 Tu ubicación actual</Popup>
                 </Marker>
               )}
 
-              {/* ♻️ Puntos filtrados */}
               {puntosFiltrados.map((p, i) => (
                 <Marker
                   key={p.id ?? i}
@@ -553,34 +437,51 @@ export default function MapaRecolector({
                   icon={iconoPorEstado(p.estado)}
                 >
                   <Popup>
-                    <div className="text-start" style={{ maxWidth: 260 }}>
+                    <div style={{ maxWidth: 260 }}>
                       <h6 className="fw-bold text-success mb-1">
                         {p.usuario?.nombres || "Usuario"}
                       </h6>
+
                       <p className="mb-1 small">
                         <strong>Material:</strong> {p.material} <br />
                         <strong>Fecha:</strong> {p.fecha_disponible} <br />
-                        <strong>Horario:</strong> {p.hora_desde} - {p.hora_hasta}{" "}
-                        <br />
+                        <strong>Horario:</strong> {p.hora_desde} - {p.hora_hasta} <br />
                         <strong>Estado:</strong>{" "}
                         <span className="badge bg-secondary">{p.estado}</span>
                       </p>
 
-                      {p.descripcion && (
-                        <p className="text-muted small mb-1">
-                          “{p.descripcion}”
-                        </p>
+                      {/* 🔵 INFORMACIÓN DE SOLICITUD */}
+                      {p.solicitud_estado && (
+                        <div className="mb-2">
+                          <strong>Solicitud:</strong>{" "}
+                          {p.solicitud_estado === "pendiente" && (
+                            <span className="badge bg-warning text-dark">
+                              Pendiente
+                            </span>
+                          )}
+                          {p.solicitud_estado === "aceptada" && (
+                            <span className="badge bg-success">Aceptada ✓</span>
+                          )}
+                          {p.solicitud_estado === "rechazada" && (
+                            <span className="badge bg-danger">Rechazada ✗</span>
+                          )}
+
+                          {p.solicitud_fecha && (
+                            <p className="small text-muted mb-0 mt-1">
+                              <strong>Fecha solicitada:</strong>{" "}
+                              {p.solicitud_fecha}
+                              <br />
+                              <strong>Horario:</strong>{" "}
+                              {p.solicitud_hora_desde} – {p.solicitud_hora_hasta}
+                            </p>
+                          )}
+                        </div>
                       )}
 
-                      {p.reciclaje?.categoria_id && (
-                        <span className="badge bg-success mb-1">
-                          🏷️ Categoría #{p.reciclaje.categoria_id}
-                        </span>
-                      )}
+                      {/* 📸 FOTOS */}
+                      <FotoCarousel fotos={p.fotos || []} />
 
-                      {/* 📸 Carrusel de fotos */}
-                      <FotoCarousel fotos={p.fotos || p.reciclaje?.fotos || []} />
-
+                      {/* BOTONES */}
                       <AccionesRecolector punto={p} onActualizar={fetchPuntos} />
                     </div>
                   </Popup>
