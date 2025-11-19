@@ -231,4 +231,20 @@ class ReciclajeController extends Controller
     return response()->json(['ok' => true, 'msg' => 'Reciclaje eliminado correctamente.']);
 }
 
+public function list()
+{
+    $user = auth()->user();
+
+    $puntos = \App\Models\PuntoRecoleccion::with(['recolector'])
+        ->where('usuario_id', $user->id)
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    return response()->json([
+        'success' => true,
+        'puntos'  => $puntos,
+    ]);
+}
+
+
 }

@@ -25,6 +25,7 @@ use App\Http\Controllers\Usuario\PremioController as UsuarioPremioController;
 use App\Http\Controllers\Usuario\ReciclajeController as UsuarioReciclajeController;
 use App\Http\Controllers\Usuario\RankingController as UsuarioRankingController;
 
+
 // Flujo Recolector
 use App\Http\Controllers\Recolector\FlujoRecoleccionController;
 use App\Http\Controllers\Recolector\DashboardController;
@@ -141,6 +142,7 @@ Route::middleware(['auth', 'verified', 'role:usuario'])
         Route::get('/reciclar', [UsuarioReciclajeController::class, 'create'])->name('reciclar');
         Route::post('/reciclar', [UsuarioReciclajeController::class, 'store'])->name('reciclar.store');
         Route::delete('/reciclajes/{punto}', [UsuarioReciclajeController::class, 'destroy'])->name('reciclajes.destroy');
+        Route::get('/puntos/list', [UsuarioReciclajeController::class, 'list'])->name('puntos.list');
 
         // Puntos
         Route::get('/puntos', [UsuarioController::class, 'puntos'])->name('puntos');
