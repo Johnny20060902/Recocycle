@@ -9,9 +9,17 @@ export default function MapaReciclaje({ onLocationSelect }) {
     const [errorMsg, setErrorMsg] = useState(null);
     const [hasLocation, setHasLocation] = useState(false);
 
-    const DEFAULT_CENTER = { lat: -17.3895, lng: -66.1568 }; // Cochabamba 🇧🇴
+    const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+    const DEFAULT_CENTER = { lat: -17.3895, lng: -66.1568 };
 
     useEffect(() => {
+        if (!GOOGLE_MAPS_KEY) {
+            console.error("❌ Google Maps KEY no cargó desde Vite.");
+            setErrorMsg("Error al cargar el mapa. API KEY no encontrada.");
+            return;
+        }
+
         const loadMap = () => {
             const map = new window.google.maps.Map(mapRef.current, {
                 center: DEFAULT_CENTER,
@@ -21,28 +29,20 @@ export default function MapaReciclaje({ onLocationSelect }) {
                 zoomControl: true,
                 fullscreenControl: true,
                 styles: [
-                    {
-                        featureType: "poi",
-                        stylers: [{ visibility: "off" }],
-                    },
-                    {
-                        featureType: "road",
-                        elementType: "labels.icon",
-                        stylers: [{ visibility: "off" }],
-                    },
+                    { featureType: "poi", stylers: [{ visibility: "off" }] },
+                    { featureType: "road", elementType: "labels.icon", stylers: [{ visibility: "off" }] }
                 ],
             });
-
             mapInstanceRef.current = map;
 
-            map.addListener("click", (e) => {
-                placeMarkerAndNotify(e.latLng);
-            });
+            map.addListener("click", (e) => placeMarkerAndNotify(e.latLng));
         };
 
+        // Si Google Maps aún no está cargado, cargamos el script
         if (!window.google) {
             const script = document.createElement("script");
-            script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places`;
+            script.src =
+                `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_KEY}&libraries=places`;
             script.async = true;
             script.defer = true;
             script.onload = loadMap;
@@ -50,7 +50,8 @@ export default function MapaReciclaje({ onLocationSelect }) {
         } else {
             loadMap();
         }
-    }, []);
+
+    }, [GOOGLE_MAPS_KEY]);
 
     const placeMarkerAndNotify = (latLng) => {
         if (!mapInstanceRef.current) return;
@@ -76,7 +77,7 @@ export default function MapaReciclaje({ onLocationSelect }) {
     };
 
     const usarMiUbicacion = () => {
-        if (!("geolocation" in navigator)) {
+        if (!navigator.geolocation) {
             setErrorMsg("Tu navegador no soporta geolocalización.");
             return;
         }
@@ -98,38 +99,27 @@ export default function MapaReciclaje({ onLocationSelect }) {
             },
             (err) => {
                 setLoadingGeo(false);
-                if (err.code === 1) {
-                    setErrorMsg("🚫 Permiso denegado. Activá la ubicación en tu navegador.");
-                } else if (err.code === 2) {
-                    setErrorMsg("📡 Ubicación no disponible.");
-                } else if (err.code === 3) {
-                    setErrorMsg("⏳ Tiempo de espera agotado.");
-                } else {
-                    setErrorMsg("❌ Error al obtener la ubicación.");
-                }
+                const errors = {
+                    1: "🚫 Permiso denegado.",
+                    2: "📡 Ubicación no disponible.",
+                    3: "⏳ Tiempo de espera agotado.",
+                };
+                setErrorMsg(errors[err.code] || "❌ Error al obtener la ubicación.");
             },
-            {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 0,
-            }
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
     };
 
     return (
         <div className="relative">
-            {/* Panel flotante de botones */}
-            <div
-                className="absolute top-3 left-3 z-10 flex flex-col gap-2"
-                style={{ pointerEvents: "auto" }}
-            >
+            <div className="absolute top-3 left-3 z-10 flex flex-col gap-2">
                 <button
                     type="button"
                     onClick={usarMiUbicacion}
                     disabled={loadingGeo}
-                    className="px-4 py-2 rounded-lg bg-gradient-to-r from-green-600 to-emerald-500 text-white text-sm shadow-md hover:shadow-lg transition-all duration-200"
+                    className="px-4 py-2 rounded-lg bg-gradient-to-r from-green-600 to-emerald-500 text-white text-sm shadow-md"
                 >
-                    {loadingGeo ? "Buscando ubicación..." : "📍 Usar mi ubicación"}
+                    {loadingGeo ? "Buscando..." : "📍 Usar mi ubicación"}
                 </button>
 
                 {hasLocation && (
@@ -138,35 +128,28 @@ export default function MapaReciclaje({ onLocationSelect }) {
                         onClick={() =>
                             mapInstanceRef.current?.panTo(markerRef.current.getPosition())
                         }
-                        className="px-4 py-2 rounded-lg bg-white text-gray-700 border border-gray-300 text-sm shadow-sm hover:bg-gray-100 transition-all duration-200"
+                        className="px-4 py-2 rounded-lg bg-white text-gray-700 border text-sm"
                     >
                         🔁 Centrar marcador
                     </button>
                 )}
             </div>
 
-            {/* Mensaje de error */}
             {errorMsg && (
-                <div className="absolute top-3 right-3 z-10 bg-white/95 border border-red-300 text-red-600 rounded-md px-4 py-2 shadow-md text-sm">
+                <div className="absolute top-3 right-3 z-10 bg-white border border-red-300 text-red-600 rounded-md px-4 py-2 shadow-md text-sm">
                     {errorMsg}
                 </div>
             )}
 
-            {/* Contenedor del mapa */}
             <div
                 ref={mapRef}
                 className="w-full h-[360px] rounded-2xl overflow-hidden border border-green-400/40 shadow-lg"
-                style={{
-                    filter: "saturate(1.1)",
-                    boxShadow: "0 6px 16px rgba(0, 128, 0, 0.15)",
-                }}
             />
 
-            {/* Mensaje inferior */}
             <div className="text-center text-gray-600 mt-2 text-sm italic">
                 {hasLocation
-                    ? "✅ Ubicación seleccionada correctamente."
-                    : "Haz clic en el mapa o usa tu ubicación actual para marcar el punto ♻️"}
+                    ? "✅ Ubicación seleccionada."
+                    : "Haz clic en el mapa o usa tu ubicación ♻️"}
             </div>
         </div>
     );
