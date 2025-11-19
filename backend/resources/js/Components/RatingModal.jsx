@@ -3,7 +3,7 @@ import Swal from "sweetalert2";
 import axios from "axios";
 import { createPortal } from "react-dom";
 
-export default function RatingModal({ puntoId, triggerLabel = "Calificar" }) {
+export default function RatingModal({ puntoId, triggerLabel = "Calificar", onRated }) {
   const [open, setOpen] = useState(false);
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
@@ -12,9 +12,9 @@ export default function RatingModal({ puntoId, triggerLabel = "Calificar" }) {
   const estrellas = [1, 2, 3, 4, 5];
 
   const colorPorPuntos = (valor) => {
-    if (valor <= 4) return "#FF4B4B"; // rojo
-    if (valor <= 8) return "#FFC300"; // amarillo
-    return "#00C851"; // verde
+    if (valor <= 4) return "#FF4B4B";
+    if (valor <= 8) return "#FFC300";
+    return "#00C851";
   };
 
   const enviarCalificacion = async () => {
@@ -36,6 +36,9 @@ export default function RatingModal({ puntoId, triggerLabel = "Calificar" }) {
         timer: 1600,
         showConfirmButton: false,
       });
+
+      // 🔥 Notificar al componente padre que se calificó
+      if (onRated) onRated();
 
       setOpen(false);
       setRating(0);

@@ -13,7 +13,7 @@ use Inertia\Response;
 class ConfirmablePasswordController extends Controller
 {
     /**
-     * Show the confirm password view.
+     * Mostrar vista de confirmación de contraseña.
      */
     public function show(): Response
     {
@@ -21,12 +21,15 @@ class ConfirmablePasswordController extends Controller
     }
 
     /**
-     * Confirm the user's password.
+     * Confirmar la contraseña del usuario.
      */
     public function store(Request $request): RedirectResponse
     {
+        $user = $request->user();
+
+        // Validación segura de contraseña actual
         if (! Auth::guard('web')->validate([
-            'email' => $request->user()->email,
+            'email'    => $user->email,
             'password' => $request->password,
         ])) {
             throw ValidationException::withMessages([
@@ -34,8 +37,19 @@ class ConfirmablePasswordController extends Controller
             ]);
         }
 
+        // Registrar timestamp de confirmación
         $request->session()->put('auth.password_confirmed_at', time());
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        // Redirección correcta según rol
+        switch ($user->role) {
+            case 'admin':
+                return redirect()->intended(route('admin.dashboard'));
+
+            case 'recolector':
+                return redirect()->intended(route('recolector.dashboard'));
+
+            default:
+                return redirect()->intended(route('usuario.dashboard'));
+        }
     }
 }

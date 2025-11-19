@@ -9,15 +9,27 @@ use Illuminate\Http\Request;
 class EmailVerificationNotificationController extends Controller
 {
     /**
-     * Send a new email verification notification.
+     * Enviar un nuevo correo de verificación.
      */
     public function store(Request $request): RedirectResponse
     {
-        if ($request->user()->hasVerifiedEmail()) {
-            return redirect()->intended(route('dashboard', absolute: false));
+        $user = $request->user();
+
+        // Si ya está verificado → redirigir al dashboard correspondiente
+        if ($user->hasVerifiedEmail()) {
+
+            switch ($user->role) {
+                case 'admin':
+                    return redirect()->intended(route('admin.dashboard'));
+                case 'recolector':
+                    return redirect()->intended(route('recolector.dashboard'));
+                default:
+                    return redirect()->intended(route('usuario.dashboard'));
+            }
         }
 
-        $request->user()->sendEmailVerificationNotification();
+        // Enviar email de verificación nuevamente
+        $user->sendEmailVerificationNotification();
 
         return back()->with('status', 'verification-link-sent');
     }

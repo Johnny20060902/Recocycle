@@ -36,7 +36,7 @@ export default function MisReciclajes({ auth, puntos = [] }) {
     return () => clearInterval(intervalo);
   }, []);
 
-  // 🔄 Actualizar datos localmente después de aceptar/rechazar
+  // 🔄 Actualizar datos localmente después de aceptar/rechazar/calificar
   const refrescarEstadoLocal = (puntoId, nuevosDatos) => {
     setItems((prev) =>
       prev.map((p) => (p.id === puntoId ? { ...p, ...nuevosDatos } : p))
@@ -336,6 +336,9 @@ export default function MisReciclajes({ auth, puntos = [] }) {
                           <RatingModal
                             puntoId={p.id}
                             triggerLabel="Calificar recolector"
+                            onRated={() =>
+                              refrescarEstadoLocal(p.id, { ya_califique: true })
+                            }
                           />
                         )}
 

@@ -9,15 +9,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Rules\PasswordISO;   // 🔐 Reglas ISO-27001
 
 class NewPasswordController extends Controller
 {
     /**
-     * Display the password reset view.
+     * Mostrar formulario de reset password.
      */
     public function create(Request $request): Response
     {
@@ -28,26 +28,28 @@ class NewPasswordController extends Controller
     }
 
     /**
-     * Handle an incoming new password request.
-     *
-     * @throws \Illuminate\Validation\ValidationException
+     * Procesar solicitud de nueva contraseña.
      */
     public function store(Request $request): RedirectResponse
     {
+        // 🔐 Validación endurecida ISO-27001
         $request->validate([
-            'token' => 'required',
-            'email' => 'required|email',
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'token'    => ['required'],
+            'email'    => ['required', 'email'],
+            'password' => [
+                'required',
+                'confirmed',
+                new PasswordISO,      // 🔥 Seguridad real
+            ],
         ]);
 
-        // Here we will attempt to reset the user's password. If it is successful we
-        // will update the password on an actual user model and persist it to the
-        // database. Otherwise we will parse the error and return the response.
+        // 🧩 Reset de contraseña estándar de Laravel
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user) use ($request) {
+
                 $user->forceFill([
-                    'password' => Hash::make($request->password),
+                    'password'       => Hash::make($request->password),
                     'remember_token' => Str::random(60),
                 ])->save();
 
@@ -55,11 +57,11 @@ class NewPasswordController extends Controller
             }
         );
 
-        // If the password was successfully reset, we will redirect the user back to
-        // the application's home authenticated view. If there is an error we can
-        // redirect them back to where they came from with their error message.
+        // 🎯 Respuestas
         if ($status == Password::PASSWORD_RESET) {
-            return redirect()->route('login')->with('status', __($status));
+            return redirect()
+                ->route('login')
+                ->with('status', __($status));
         }
 
         throw ValidationException::withMessages([

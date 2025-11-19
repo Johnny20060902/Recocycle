@@ -3,27 +3,27 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
+use App\Http\Requests\Auth\UpdatePasswordRequest;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Password;
 
 class PasswordController extends Controller
 {
     /**
-     * Update the user's password.
+     * Actualiza la contraseña del usuario (Panel Perfil).
+     * Validación y seguridad ISO-27001 en UpdatePasswordRequest.
      */
-    public function update(Request $request): RedirectResponse
+    public function update(UpdatePasswordRequest $request)
     {
-        $validated = $request->validate([
-            'current_password' => ['required', 'current_password'],
-            'password' => ['required', Password::defaults(), 'confirmed'],
+        $user = $request->user();
+
+        // 🔐 Actualizar contraseña de forma segura
+        $user->update([
+            'password' => Hash::make($request->validated()['password']),
         ]);
 
-        $request->user()->update([
-            'password' => Hash::make($validated['password']),
-        ]);
+        // 🔒 Regenerar token de sesión por seguridad
+        $request->session()->regenerateToken();
 
-        return back();
+        return back()->with('success', 'Contraseña actualizada correctamente.');
     }
 }

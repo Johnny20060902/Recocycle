@@ -20,29 +20,31 @@ class AuthenticatedSessionController extends Controller
     {
         return Inertia::render('Auth/Login', [
             'canResetPassword' => Route::has('password.request'),
-            'status' => session('status'),
+            'status'           => session('status'),
         ]);
     }
 
     /**
      * Procesa la autenticación de usuario.
+     * Validación segura manejada en LoginRequest.
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-        Auth::shouldUse('web'); // ✅ Fuerza el guard correcto (modelo Usuario)
+        Auth::shouldUse('web'); // 🔐 Usa el guard del modelo Usuario
 
-        if (!Auth::guard('web')->attempt(
-            $request->only('email', 'password'),
-            $request->boolean('remember')
-        )) {
-            return back()->withErrors([
-                'email' => __('auth.failed'),
-            ]);
-        }
+        // 👉 LoginRequest ya maneja:
+        // - Validación
+        // - Intentos fallidos
+        // - Rate limiting
+        // - Excepciones limpias ISO
+
+        $request->authenticate();   // 100% seguro
 
         $request->session()->regenerate();
+
         $user = Auth::guard('web')->user();
 
+        // 🔄 Redirección según rol
         switch ($user->role) {
             case 'admin':
                 return redirect()->intended(route('admin.dashboard'));
@@ -62,10 +64,6 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        
-        Auth::shouldUse('web');
-        Auth::guard('web')->logout();
-
 
         return redirect('/');
     }
