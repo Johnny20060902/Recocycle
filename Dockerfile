@@ -24,11 +24,16 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 FROM node:20-alpine AS node-build
 WORKDIR /app
 
+# 🔥 Capturar variable de entorno desde Render
+ARG VITE_GOOGLE_MAPS_API_KEY
+ENV VITE_GOOGLE_MAPS_API_KEY=${VITE_GOOGLE_MAPS_API_KEY}
+
 COPY backend/package*.json ./
 RUN npm install
 
 COPY backend/ ./
 RUN npm run build
+
 
 
 # ===========================

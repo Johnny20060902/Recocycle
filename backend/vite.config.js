@@ -4,15 +4,10 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig(({ mode }) => {
 
-    // 📌 Cargar variables del .env
-    const env = loadEnv(mode, process.cwd(), '')
+    // Cargar variables del .env, prefijo VITE_
+    const env = loadEnv(mode, process.cwd(), 'VITE_')
 
     return {
-        define: {
-            // 📌 Esto permite usar process.env.VARIABLE en React
-            'process.env': env,
-        },
-
         plugins: [
             laravel({
                 input: [
@@ -20,8 +15,6 @@ export default defineConfig(({ mode }) => {
                     'resources/js/app.jsx',
                 ],
                 refresh: true,
-
-                // Carpeta donde Vite construye los assets
                 buildDirectory: 'build',
             }),
             react(),
