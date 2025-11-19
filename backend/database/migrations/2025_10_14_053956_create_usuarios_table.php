@@ -23,8 +23,9 @@ return new class extends Migration
             // 📧 Credenciales
             $table->string('email')->unique();
             $table->string('password');
+            $table->rememberToken(); // 🔥 FIX CRÍTICO
 
-            // 🖼️ Foto personal del usuario (recolector/usuario/admin)
+            // 🖼️ Foto personal del usuario
             $table->string('foto_url')->nullable()
                 ->comment('Ruta o URL de la foto de perfil del usuario');
 
@@ -33,16 +34,16 @@ return new class extends Migration
                 ->default('usuario')
                 ->comment('Rol o tipo de cuenta dentro del sistema');
 
-            // 🔹 Estado del usuario (string)
+            // 🔹 Estado del usuario
             $table->enum('estado', ['activo', 'inactivo', 'pendiente'])
                 ->default('activo')
                 ->comment('Estado del usuario dentro del sistema');
 
-            // 💰 Puntos ecológicos o de actividad
+            // 💰 Puntos ecológicos
             $table->unsignedInteger('puntaje')->default(0)
                 ->comment('Puntos acumulados por reciclaje o acciones ecológicas');
 
-            // 🌟 Reputación promedio (escala 0–10)
+            // 🌟 Reputación promedio
             $table->decimal('rating_promedio', 4, 2)->default(0.00)
                 ->comment('Promedio de calificación del usuario (escala 0–10)');
 
