@@ -11,69 +11,72 @@ return new class extends Migration
         Schema::create('punto_recoleccions', function (Blueprint $table) {
             $table->id();
 
-            // 🔗 Usuario que creó el punto (dueño del reciclaje)
+            // 🔗 Usuario dueño del punto de recolección
             $table->foreignId('usuario_id')
                 ->constrained('usuarios')
                 ->onDelete('cascade');
 
-            // 🔗 Relación con el reciclaje (si existe un registro previo)
+            // 🔗 Relación con reciclaje (si el usuario ya subió fotos)
             $table->foreignId('reciclaje_id')
                 ->nullable()
                 ->constrained('reciclajes')
                 ->onDelete('cascade');
 
-            // 🔗 Recolector asignado
+            // 🔗 Recolector asignado al punto
             $table->foreignId('recolector_id')
                 ->nullable()
                 ->constrained('usuarios')
                 ->nullOnDelete();
 
-            // 📍 Coordenadas del punto
+            // 📍 Ubicación geográfica
             $table->decimal('latitud', 10, 7);
             $table->decimal('longitud', 10, 7);
 
-            // ♻️ Datos del material
+            // ♻️ Datos del reciclaje
             $table->string('material');
             $table->decimal('peso', 8, 2)->nullable();
             $table->text('descripcion')->nullable();
 
-            // 📸 Foto final de la recolección (subida por el recolector)
+            // 📸 Foto final subida por el recolector
             $table->string('foto_final')->nullable();
 
-            // 🗓️ Fechas y horarios principales
+            // 🗓️ Fechas que maneja el usuario
             $table->date('fecha')->nullable();
             $table->date('fecha_disponible')->nullable();
             $table->time('hora_desde')->nullable();
             $table->time('hora_hasta')->nullable();
 
-            // 🚚 Flujo de recolección
+            // 🚚 Flujo principal
             $table->enum('estado', [
-                'pendiente',    // creado por el usuario
-                'asignado',     // aceptado por un recolector
-                'en_camino',    // recolector en camino
+                'pendiente',    // creado por usuario
+                'asignado',     // recolector aceptó
+                'en_camino',    // recolector va hacia el punto
                 'recogido',     // material recogido
                 'completado',   // proceso finalizado
-                'cancelado'     // cancelado
+                'cancelado'
             ])->default('pendiente')->index();
 
-            // 📆 Tiempos de transición
+            // 🕒 Tiempos de transición
             $table->timestamp('aceptado_at')->nullable();
             $table->timestamp('recogido_at')->nullable();
             $table->timestamp('completado_at')->nullable();
 
-            // 🔢 Código único para rastreo
+            // 🔢 Código único por punto
             $table->string('codigo', 20)->nullable()->unique();
 
-            // 📨 Campos del flujo de solicitud
+            // 📨 Solicitud de recolector → usuario
             $table->enum('solicitud_estado', [
-                'pendiente',    // enviada por el recolector
-                'aceptada',     // usuario la acepta
-                'rechazada'     // usuario la rechaza
+                'pendiente',
+                'aceptada',
+                'rechazada'
             ])->default('pendiente');
 
-            $table->date('solicitud_fecha')->nullable();       // fecha elegida por el recolector
-            $table->time('solicitud_hora_desde')->nullable();  // rango de hora
+            $table->date('solicitud_fecha')->nullable();
+            $table->time('solicitud_hora_desde')->nullable();
             $table->time('solicitud_hora_hasta')->nullable();
+
+            // ⭐ NUEVO: evita calificaciones duplicadas
+            $table->boolean('ya_califique')->default(false);
 
             $table->timestamps();
         });
