@@ -24,7 +24,7 @@ class ReporteController extends Controller
     }
 
     /**
-     * 🧾 Mostrar PDF de recolectores
+     * 🧾 Mostrar PDF de Recolectores
      */
     public function recolectoresReporte()
     {
@@ -34,7 +34,7 @@ class ReporteController extends Controller
                 'nombres',
                 'apellidos',
                 'email',
-                'contacto',
+                'telefono',
                 'puntaje',
                 'rating_promedio',
                 'estado',
@@ -74,7 +74,7 @@ class ReporteController extends Controller
                 'nombres',
                 'apellidos',
                 'email',
-                'contacto',
+                'telefono',
                 'puntaje',
                 'rating_promedio',
                 'estado',
@@ -115,7 +115,7 @@ class ReporteController extends Controller
                 'nombres',
                 'apellidos',
                 'email',
-                'contacto',
+                'telefono',
                 'puntaje',
                 'rating_promedio',
                 'estado',
@@ -155,7 +155,7 @@ class ReporteController extends Controller
                 'nombres',
                 'apellidos',
                 'email',
-                'contacto',
+                'telefono',
                 'puntaje',
                 'rating_promedio',
                 'estado',
@@ -185,3 +185,4 @@ class ReporteController extends Controller
         );
     }
 }
+

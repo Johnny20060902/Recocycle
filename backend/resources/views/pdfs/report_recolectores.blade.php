@@ -193,7 +193,7 @@
 
                 <td class="text-left">{{ $r->email ?? '—' }}</td>
 
-                <td>{{ $r->contacto ?? '—' }}</td>
+                <td>{{ $r->telefono ?? '—' }}</td>
 
                 <td>{{ $r->puntaje ?? 0 }}</td>
 
