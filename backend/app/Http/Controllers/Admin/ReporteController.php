@@ -17,7 +17,6 @@ class ReporteController extends Controller
         $user = auth()->user();
 
         return Inertia::render('Admin/Reportes/Index', [
-            // ✅ Mantiene compatibilidad con AppLayout (auth.user.role)
             'auth' => [
                 'user' => $user,
             ],
@@ -25,12 +24,25 @@ class ReporteController extends Controller
     }
 
     /**
-     * 🧾 Generar PDF de Recolectores
-     * Muestra el PDF en otra pestaña
+     * 🧾 Mostrar PDF de recolectores
      */
     public function recolectoresReporte()
     {
-        $recolectores = Usuario::where('role', 'recolector')->get();
+        $recolectores = Usuario::where('role', 'recolector')
+            ->select(
+                'id',
+                'nombres',
+                'apellidos',
+                'email',
+                'contacto',
+                'puntaje',
+                'rating_promedio',
+                'estado',
+                'created_at'
+            )
+            ->withCount('reciclajes as total_reciclajes')
+            ->orderBy('id', 'desc')
+            ->get();
 
         $activos = $recolectores->where('estado', 'activo')->count();
         $inactivos = $recolectores->where('estado', 'inactivo')->count();
@@ -46,13 +58,9 @@ class ReporteController extends Controller
             'fecha' => $fecha,
         ])->setPaper('a4', 'portrait');
 
-        // 🔹 Mostrar en pestaña nueva (sin romper flujo Inertia)
         return response($pdf->output(), 200)
             ->header('Content-Type', 'application/pdf')
-            ->header(
-                'Content-Disposition',
-                'inline; filename="Reporte_Recolectores_' . now()->format('Ymd_His') . '.pdf"'
-            );
+            ->header('Content-Disposition', 'inline; filename="Reporte_Recolectores_' . now()->format('Ymd_His') . '.pdf"');
     }
 
     /**
@@ -60,7 +68,21 @@ class ReporteController extends Controller
      */
     public function recolectoresDescargar()
     {
-        $recolectores = Usuario::where('role', 'recolector')->get();
+        $recolectores = Usuario::where('role', 'recolector')
+            ->select(
+                'id',
+                'nombres',
+                'apellidos',
+                'email',
+                'contacto',
+                'puntaje',
+                'rating_promedio',
+                'estado',
+                'created_at'
+            )
+            ->withCount('reciclajes as total_reciclajes')
+            ->orderBy('id', 'desc')
+            ->get();
 
         $activos = $recolectores->where('estado', 'activo')->count();
         $inactivos = $recolectores->where('estado', 'inactivo')->count();
@@ -76,7 +98,6 @@ class ReporteController extends Controller
             'fecha' => $fecha,
         ])->setPaper('a4', 'portrait');
 
-        // 🔹 Descargar directamente
         return response()->streamDownload(
             fn() => print($pdf->output()),
             'Reporte_Recolectores_' . now()->format('Ymd_His') . '.pdf'
@@ -84,12 +105,25 @@ class ReporteController extends Controller
     }
 
     /**
-     * 👥 Generar PDF de Usuarios
-     * Muestra el PDF en otra pestaña (sin romper flujo)
+     * 👥 Mostrar PDF de Usuarios
      */
     public function usuariosReporte()
     {
-        $usuarios = Usuario::where('role', 'usuario')->get();
+        $usuarios = Usuario::where('role', 'usuario')
+            ->select(
+                'id',
+                'nombres',
+                'apellidos',
+                'email',
+                'contacto',
+                'puntaje',
+                'rating_promedio',
+                'estado',
+                'created_at'
+            )
+            ->withCount('reciclajes as total_reciclajes')
+            ->orderBy('id', 'desc')
+            ->get();
 
         $activos = $usuarios->where('estado', 'activo')->count();
         $inactivos = $usuarios->where('estado', 'inactivo')->count();
@@ -105,13 +139,9 @@ class ReporteController extends Controller
             'fecha' => $fecha,
         ])->setPaper('a4', 'portrait');
 
-        // 🔹 Mostrar directamente en navegador
         return response($pdf->output(), 200)
             ->header('Content-Type', 'application/pdf')
-            ->header(
-                'Content-Disposition',
-                'inline; filename="Reporte_Usuarios_' . now()->format('Ymd_His') . '.pdf"'
-            );
+            ->header('Content-Disposition', 'inline; filename="Reporte_Usuarios_' . now()->format('Ymd_His') . '.pdf"');
     }
 
     /**
@@ -119,7 +149,21 @@ class ReporteController extends Controller
      */
     public function usuariosDescargar()
     {
-        $usuarios = Usuario::where('role', 'usuario')->get();
+        $usuarios = Usuario::where('role', 'usuario')
+            ->select(
+                'id',
+                'nombres',
+                'apellidos',
+                'email',
+                'contacto',
+                'puntaje',
+                'rating_promedio',
+                'estado',
+                'created_at'
+            )
+            ->withCount('reciclajes as total_reciclajes')
+            ->orderBy('id', 'desc')
+            ->get();
 
         $activos = $usuarios->where('estado', 'activo')->count();
         $inactivos = $usuarios->where('estado', 'inactivo')->count();
@@ -135,7 +179,6 @@ class ReporteController extends Controller
             'fecha' => $fecha,
         ])->setPaper('a4', 'portrait');
 
-        // 🔹 Descargar archivo PDF
         return response()->streamDownload(
             fn() => print($pdf->output()),
             'Reporte_Usuarios_' . now()->format('Ymd_His') . '.pdf'
