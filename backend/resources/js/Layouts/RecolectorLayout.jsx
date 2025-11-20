@@ -8,7 +8,6 @@ export default function RecolectorLayout({ title, children, auth }) {
   const { post } = useForm();
 
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 992);
-
   const [darkMode, setDarkMode] = useState(
     localStorage.getItem("recolectorTheme") === "dark"
   );
@@ -223,7 +222,8 @@ export default function RecolectorLayout({ title, children, auth }) {
         <main
           className="flex-grow-1 p-4"
           style={{
-            minHeight: "calc(100vh - 70px)",
+            height: "calc(100vh - 70px)",
+            overflowY: "auto",
             background: darkMode ? "#0b0b0b" : "#f8f9fa",
           }}
         >

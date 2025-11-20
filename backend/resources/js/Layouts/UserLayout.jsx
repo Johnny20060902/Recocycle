@@ -230,7 +230,16 @@ export default function UserLayout({ title, children, auth }) {
         </nav>
 
         {/* ========================= CONTENIDO ========================= */}
-        <main className="flex-grow-1 p-4">{children}</main>
+        <main
+          className="flex-grow-1 p-4"
+          style={{
+            height: "calc(100vh - 70px)",
+            overflowY: "auto",
+            background: darkMode ? "#0b0b0b" : "#f8f9fa",
+          }}
+        >
+          {children}
+        </main>
 
         {/* ========================= FOOTER ========================= */}
         <footer
