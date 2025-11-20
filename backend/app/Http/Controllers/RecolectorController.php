@@ -230,41 +230,35 @@ class RecolectorController extends Controller
         ]);
     }
 
-    public function historial()
-    {
-        $userId = Auth::id();
+public function historial()
+{
+    $userId = Auth::id();
 
-        $puntos = PuntoRecoleccion::with(['usuario:id,nombres,apellidos'])
-            ->where('recolector_id', $userId)
-            ->latest()
-            ->get()
-            ->map(function ($p) use ($userId) {
-                $yaCalifique = $p->calificaciones()
-                    ->where('evaluador_id', $userId)
-                    ->exists();
+    $puntos = PuntoRecoleccion::with([
+            'usuario:id,nombres,apellidos,rating_promedio',
+            'reciclaje' // 👈 NECESARIO para traer fotos
+        ])
+        ->where('recolector_id', $userId)
+        ->latest()
+        ->get();
 
-                return [
-                    'id'               => $p->id,
-                    'material'         => $p->material,
-                    'descripcion'      => $p->descripcion,
-                    'estado'           => $p->estado,
-                    'fecha_disponible' => $p->fecha_disponible,
-                    'hora_desde'       => $p->hora_desde,
-                    'hora_hasta'       => $p->hora_hasta,
-                    'usuario'          => $p->usuario ? [
-                        'nombres'   => $p->usuario->nombres,
-                        'apellidos' => $p->usuario->apellidos,
-                        'rating'    => $p->usuario->rating_promedio,
-                    ] : null,
-                    'ya_califique'     => $yaCalifique,
-                ];
-            });
+    // 🔥 Normalizamos fotos e imágenes para el carrusel
+    $puntos = $this->prepararPuntosParaFront($puntos);
 
-        return Inertia::render('Recolector/Historial', [
-            'puntos' => $puntos,
-            'auth'   => Auth::user(),
-        ]);
-    }
+    // 🔥 Agregamos flag ya_califique por cada punto
+    $puntos = $puntos->map(function ($p) use ($userId) {
+        $p->ya_califique = $p->calificaciones()
+            ->where('evaluador_id', $userId)
+            ->exists();
+
+        return $p;
+    });
+
+    return Inertia::render('Recolector/Historial', [
+        'puntos' => $puntos,
+        'auth'   => Auth::user(),
+    ]);
+}
 
     /**
      * 📅 El recolector selecciona una fecha/hora y envía solicitud al usuario
