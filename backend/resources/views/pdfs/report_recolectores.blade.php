@@ -17,7 +17,7 @@
             color: #222;
         }
 
-        /* ===== HEADER / FOOTER ===== */
+        /* HEADER – FIX */
         header {
             position: fixed;
             top: -100px;
@@ -27,6 +27,7 @@
             border-bottom: 3px solid #00c896;
         }
 
+        /* FOOTER */
         footer {
             position: fixed;
             bottom: -60px;
@@ -46,11 +47,11 @@
             object-fit: cover;
         }
 
-        /* ===== TABLAS FIX DOMPDF ===== */
+        /* TABLA */
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            margin-top: 8px;
         }
 
         thead { display: table-header-group; }
@@ -70,46 +71,40 @@
 
         tbody tr:nth-child(even) { background-color: #f8f9fb; }
         tbody tr:nth-child(odd) { background-color: #ffffff; }
+
         .text-left { text-align: left; }
 
         /* Badges */
         .badge-activo {
-            background:#e6f9f2;
-            color:#0f8558;
-            padding:3px 6px;
-            border-radius:10px;
-            font-size:10px;
-            border:1px solid #0f8558;
+            background:#e6f9f2; color:#0f8558;
+            padding:3px 6px; border-radius:10px;
+            border:1px solid #0f8558; font-size:10px;
         }
         .badge-pendiente {
-            background:#fff8e1;
-            color:#b28704;
-            padding:3px 6px;
-            border-radius:10px;
-            font-size:10px;
-            border:1px solid #b28704;
+            background:#fff8e1; color:#b28704;
+            padding:3px 6px; border-radius:10px;
+            border:1px solid #b28704; font-size:10px;
         }
         .badge-inactivo {
-            background:#fdecea;
-            color:#b71c1c;
-            padding:3px 6px;
-            border-radius:10px;
-            font-size:10px;
-            border:1px solid #b71c1c;
+            background:#fdecea; color:#b71c1c;
+            padding:3px 6px; border-radius:10px;
+            border:1px solid #b71c1c; font-size:10px;
         }
 
         /* Rating */
         .rating-text { font-weight:bold; color:#ff9800; }
+
         .rating-bar-container {
-            width:100%; height:6px; background:#e0e0e0;
-            border-radius:4px; margin-top:3px;
+            width:100%; height:6px;
+            background:#e0e0e0; border-radius:4px;
+            margin-top:3px;
         }
         .rating-bar-fill {
             height:100%; border-radius:4px;
             background:linear-gradient(90deg,#ffb300,#ff9800);
         }
 
-        /* SUMMARY */
+        /* Summary */
         .summary-box {
             margin-top: 18px;
             border-top: 2px solid #00c896;
@@ -121,10 +116,10 @@
             padding: 2px 0;
         }
 
-        .summary-label { font-weight: bold; color:#003366; }
+        .summary-label { font-weight:bold; color:#003366; }
 
-        .firma { margin-top: 40px; text-align:right; }
-        .firma-linea { margin-bottom: 2px; }
+        .firma { margin-top:40px; text-align:right; }
+        .firma-linea { margin-bottom:2px; }
     </style>
 </head>
 
@@ -164,64 +159,53 @@
         LISTADO GENERAL DE RECOLECTORES
     </h3>
 
-    <table>
-        <thead>
+    {{-- 🔥 TABLA SIN ESPACIOS NI SALTOS – REQUISITO DOMPDF --}}
+    <table><thead><tr>
+        <th>ID</th>
+        <th>Nombre completo</th>
+        <th>Correo</th>
+        <th>Teléfono</th>
+        <th>Puntaje</th>
+        <th>Total reciclajes</th>
+        <th>Rating</th>
+        <th>Estado</th>
+        <th>Fecha registro</th>
+    </tr></thead><tbody>
+    @foreach ($recolectores as $r)
+        @php
+            $rating = floatval($r->rating_promedio ?? 0);
+            $ratingPercent = ($rating / 5) * 100;
+        @endphp
+
         <tr>
-            <th>ID</th>
-            <th>Nombre completo</th>
-            <th>Correo</th>
-            <th>Teléfono</th>
-            <th>Puntaje</th>
-            <th>Total reciclajes</th>
-            <th>Rating</th>
-            <th>Estado</th>
-            <th>Fecha registro</th>
+            <td>{{ $r->id }}</td>
+            <td class="text-left">{{ $r->nombres }} {{ $r->apellidos }}</td>
+            <td class="text-left">{{ $r->email ?? '—' }}</td>
+            <td>{{ $r->telefono ?? '—' }}</td>
+            <td>{{ $r->puntaje ?? 0 }}</td>
+            <td>{{ $r->total_reciclajes ?? 0 }}</td>
+
+            <td>
+                <span class="rating-text">{{ number_format($rating,1) }} / 5.0</span>
+                <div class="rating-bar-container">
+                    <div class="rating-bar-fill" style="width:{{ $ratingPercent }}%"></div>
+                </div>
+            </td>
+
+            <td>
+                @if($r->estado === "activo")
+                    <span class="badge-activo">ACTIVO</span>
+                @elseif($r->estado === "pendiente")
+                    <span class="badge-pendiente">PENDIENTE</span>
+                @else
+                    <span class="badge-inactivo">INACTIVO</span>
+                @endif
+            </td>
+
+            <td>{{ $r->created_at ? Carbon::parse($r->created_at)->format('d/m/Y H:i') : '—' }}</td>
         </tr>
-        </thead>
-
-        <tbody>
-        @foreach ($recolectores as $r)
-            @php
-                $rating = floatval($r->rating_promedio ?? 0);
-                $ratingPercent = ($rating / 5) * 100;
-            @endphp
-
-            <tr>
-                <td>{{ $r->id }}</td>
-
-                <td class="text-left">{{ $r->nombres }} {{ $r->apellidos }}</td>
-
-                <td class="text-left">{{ $r->email ?? '—' }}</td>
-
-                <td>{{ $r->telefono ?? '—' }}</td>
-
-                <td>{{ $r->puntaje ?? 0 }}</td>
-
-                <td>{{ $r->total_reciclajes ?? 0 }}</td>
-
-                <td>
-                    <span class="rating-text">{{ number_format($rating,1) }} / 5.0</span>
-                    <div class="rating-bar-container">
-                        <div class="rating-bar-fill" style="width:{{ $ratingPercent }}%"></div>
-                    </div>
-                </td>
-
-                <td>
-                    @if($r->estado === "activo")
-                        <span class="badge-activo">ACTIVO</span>
-                    @elseif($r->estado === "pendiente")
-                        <span class="badge-pendiente">PENDIENTE</span>
-                    @else
-                        <span class="badge-inactivo">INACTIVO</span>
-                    @endif
-                </td>
-
-                <td>{{ $r->created_at ? Carbon::parse($r->created_at)->format('d/m/Y H:i') : '—' }}</td>
-            </tr>
-
-        @endforeach
-        </tbody>
-    </table>
+    @endforeach
+    </tbody></table>
 
     <div class="summary-box">
         <strong>Resumen general</strong>
