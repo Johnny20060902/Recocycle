@@ -6,43 +6,42 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
 export default function RecolectorLayout({ title, children, auth }) {
   const { post } = useForm();
-
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 992);
   const [darkMode, setDarkMode] = useState(
     localStorage.getItem("recolectorTheme") === "dark"
   );
 
-  /* ========================= 🧩 SIDEBAR RESPONSIVO ========================= */
+  // 📱 Sidebar responsivo
   useEffect(() => {
-    const onResize = () => setSidebarOpen(window.innerWidth >= 992);
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    const handleResize = () => setSidebarOpen(window.innerWidth >= 992);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  /* ========================= 🌙 MODO OSCURO ========================= */
+  // 🌙 Modo oscuro persistente
   useEffect(() => {
     document.body.setAttribute("data-theme", darkMode ? "dark" : "light");
     localStorage.setItem("recolectorTheme", darkMode ? "dark" : "light");
   }, [darkMode]);
 
-  /* ========================= 🔐 LOGOUT ========================= */
+  // 🔐 Logout
   const handleLogout = (e) => {
     e.preventDefault();
     Swal.fire({
       title: "¿Cerrar sesión?",
-      text: "Tu sesión se cerrará.",
+      text: "Tu sesión será cerrada.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#0078ff",
       cancelButtonColor: "#999",
       confirmButtonText: "Sí, salir",
       cancelButtonText: "Cancelar",
-    }).then((res) => {
-      if (res.isConfirmed) post(route("logout"));
+    }).then((result) => {
+      if (result.isConfirmed) post(route("logout"));
     });
   };
 
-  /* ========================= ⚡ FLASH MESSAGES ========================= */
+  // ⚡ Flash messages (éxito / error)
   useEffect(() => {
     const flash = window?.page?.props?.flash;
     if (flash?.success) {
@@ -50,11 +49,10 @@ export default function RecolectorLayout({ title, children, auth }) {
         icon: "success",
         title: "🚛 Éxito",
         text: flash.success,
-        timer: 2000,
+        timer: 2500,
         showConfirmButton: false,
       });
-    }
-    if (flash?.error) {
+    } else if (flash?.error) {
       Swal.fire({
         icon: "error",
         title: "❌ Error",
@@ -64,28 +62,12 @@ export default function RecolectorLayout({ title, children, auth }) {
     }
   }, []);
 
-  /* ========================= 🧭 MENÚ LATERAL ========================= */
+  // 🧭 Menú lateral
   const menu = [
-    {
-      name: "Inicio",
-      route: "recolector.dashboard",
-      icon: "bi bi-house-door-fill text-info",
-    },
-    {
-      name: "Mapa de Recolección",
-      route: "recolector.mapa",
-      icon: "bi bi-map-fill text-success",
-    },
-    {
-      name: "Historial",
-      route: "recolector.historial",
-      icon: "bi bi-clock-history text-warning",
-    },
-    {
-      name: "Ranking",
-      route: "recolector.ranking",
-      icon: "bi bi-trophy-fill text-light",
-    },
+    { name: "Inicio", route: "recolector.dashboard", icon: "bi bi-house-door-fill text-info" },
+    { name: "Mapa de Recolección", route: "recolector.mapa", icon: "bi bi-map-fill text-success" },
+    { name: "Historial", route: "recolector.historial", icon: "bi bi-clock-history text-warning" },
+    { name: "Ranking", route: "recolector.ranking", icon: "bi bi-trophy-fill text-light" },
   ];
 
   return (
@@ -97,19 +79,17 @@ export default function RecolectorLayout({ title, children, auth }) {
         transition: "background 0.3s ease, color 0.3s ease",
       }}
     >
-      {/* ========================= 🟦 SIDEBAR ========================= */}
+      {/* ===== SIDEBAR ===== */}
       {sidebarOpen && (
         <aside
-          className="p-3 position-fixed top-0 start-0 h-100 shadow-lg"
+          className="p-3 position-fixed top-0 start-0 h-100 shadow-lg text-white"
           style={{
             width: "250px",
-            zIndex: 1040,
             background: "linear-gradient(180deg, #001f3f 0%, #0066a3 100%)",
             borderRight: "1px solid rgba(255,255,255,0.1)",
-            overflowY: "auto",
+            zIndex: 1040,
           }}
         >
-          {/* Perfil usuario */}
           <div className="text-center mb-4">
             <img
               src="/images/logo-recocycle.png"
@@ -128,64 +108,59 @@ export default function RecolectorLayout({ title, children, auth }) {
             <small className="opacity-75">Recolector activo 🧤</small>
           </div>
 
-          {/* Menú */}
           <ul className="nav flex-column gap-2">
             {menu.map((item) => (
               <li key={item.name}>
                 <Link
                   href={route(item.route)}
-                  className={`nav-link d-flex align-items-center gap-2 px-3 py-2 rounded ${
-                    route().current(item.route)
+                  className={`nav-link d-flex align-items-center gap-2 px-3 py-2 rounded ${route().current(item.route)
                       ? "bg-info text-white shadow-sm"
                       : "text-white opacity-85 hover-glow"
-                  }`}
-                  style={{ fontWeight: 500 }}
+                    }`}
+                  style={{
+                    transition: "all 0.2s ease",
+                    fontWeight: 500,
+                  }}
                 >
                   <i className={`${item.icon} fs-5`}></i>
-                  {item.name}
+                  <span>{item.name}</span>
                 </Link>
               </li>
             ))}
-
             <hr className="border-light opacity-25 my-3" />
-
-            {/* Logout */}
             <li>
               <button
                 onClick={handleLogout}
                 className="btn btn-outline-light w-100 rounded-pill d-flex align-items-center justify-content-center gap-2 shadow-sm"
               >
-                <i className="bi bi-box-arrow-right"></i> Salir
+                <i className="bi bi-box-arrow-right"></i>
+                <span>Salir</span>
               </button>
             </li>
           </ul>
         </aside>
       )}
 
-      {/* ========================= 🌐 CONTENEDOR PRINCIPAL ========================= */}
+      {/* ===== CONTENEDOR PRINCIPAL ===== */}
       <div
         className="flex-grow-1 d-flex flex-column"
         style={{
-          marginLeft: sidebarOpen ? "250px" : "0px",
+          marginLeft: sidebarOpen ? "250px" : "0",
           transition: "margin 0.3s ease",
-          minHeight: "100vh",
         }}
       >
-        {/* ========================= 🔵 NAVBAR SUPERIOR ========================= */}
+        {/* ===== NAVBAR ===== */}
         <nav
-          className={`navbar navbar-expand-lg shadow-sm sticky-top ${
-            darkMode ? "navbar-dark" : "navbar-light"
-          }`}
+          className={`navbar navbar-expand-lg shadow-sm sticky-top ${darkMode ? "navbar-dark" : "navbar-light"
+            }`}
           style={{
-            height: "70px",
-            flexShrink: 0,
             background: darkMode
               ? "linear-gradient(90deg, #000c1a 0%, #002a4d 100%)"
               : "linear-gradient(90deg, #00b4ff 0%, #0078ff 100%)",
+            height: "70px",
           }}
         >
           <div className="container-fluid d-flex justify-content-between align-items-center px-4">
-            {/* Botón menú */}
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="btn btn-light border-0 me-3"
@@ -195,54 +170,65 @@ export default function RecolectorLayout({ title, children, auth }) {
                 borderRadius: "50%",
                 boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
               }}
+              title="Mostrar / Ocultar menú"
             >
               <i className="bi bi-list text-info fs-5"></i>
             </button>
 
-            {/* Logo + título */}
             <div className="d-flex align-items-center gap-2 mx-auto">
               <img
                 src="/images/logo-recocycle.png"
                 alt="Logo"
                 className="rounded-circle bg-white p-1 shadow-sm"
-                style={{ height: "45px", width: "45px" }}
+                style={{
+                  height: "45px",
+                  width: "45px",
+                  border: "2px solid white",
+                }}
               />
-              <h5 className="text-white fw-semibold mb-0">
+              <h5
+                className="text-white fw-semibold mb-0"
+                style={{
+                  fontSize: "1.1rem",
+                  letterSpacing: "0.4px",
+                }}
+              >
                 {title || "Panel del Recolector"}
               </h5>
             </div>
 
-            {/* Switch dark mode */}
-            <label className="theme-switch mb-0">
-              <input
-                type="checkbox"
-                checked={darkMode}
-                onChange={() => setDarkMode(!darkMode)}
-              />
-              <span className="slider round"></span>
-            </label>
+            <div className="d-flex align-items-center gap-3">
+              {/* Switch Dark Mode */}
+              <label className="theme-switch mb-0">
+                <input
+                  type="checkbox"
+                  checked={darkMode}
+                  onChange={() => setDarkMode(!darkMode)}
+                  aria-label="Alternar modo oscuro"
+                />
+                <span className="slider round"></span>
+              </label>
+            </div>
           </div>
         </nav>
 
-        {/* ========================= 📦 CONTENIDO ========================= */}
+        {/* ===== CONTENIDO ===== */}
         <main
           className="flex-grow-1 p-4"
           style={{
-            height: "calc(100vh - 70px)",
-            overflowY: "auto",
-            overflowX: "hidden",
+            minHeight: "calc(100vh - 70px)",
             background: darkMode ? "#0b0b0b" : "#f8f9fa",
           }}
         >
           {children}
         </main>
 
-        {/* ========================= 📌 FOOTER ========================= */}
+        {/* ===== FOOTER ===== */}
         <footer
-          className={`text-center py-3 shadow-sm border-top ${
-            darkMode ? "bg-dark text-secondary border-secondary" : "bg-white text-muted"
-          }`}
-          style={{ height: "70px", flexShrink: 0 }}
+          className={`text-center py-3 shadow-sm border-top ${darkMode
+              ? "bg-dark text-secondary border-secondary"
+              : "bg-white text-muted"
+            }`}
         >
           <small>
             © {new Date().getFullYear()} <strong>Recocycle</strong> — Unidos por un planeta limpio 🌎
@@ -252,12 +238,11 @@ export default function RecolectorLayout({ title, children, auth }) {
         </footer>
       </div>
 
-      {/* ========================= 🎨 ESTILOS EXTRA ========================= */}
+      {/* ===== ESTILOS ===== */}
       <style>{`
         .hover-glow:hover {
-          background: rgba(255, 255, 255, 0.12);
-          box-shadow: 0 0 9px rgba(255, 255, 255, 0.28);
-          transition: 0.2s ease;
+          background: rgba(255, 255, 255, 0.15);
+          box-shadow: 0 0 8px rgba(255, 255, 255, 0.25);
         }
         .theme-switch {
           position: relative;
