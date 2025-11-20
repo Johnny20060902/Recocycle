@@ -92,6 +92,7 @@
         tbody tr:nth-child(even) { background-color: #f8f9fb; }
         tbody tr:nth-child(odd)  { background-color: #ffffff; }
 
+        /* Badges */
         .badge-activo {
             background: #e6f9f2;
             color: #0f8558;
@@ -99,6 +100,15 @@
             border-radius: 10px;
             font-size: 10px;
             border: 1px solid #0f8558;
+        }
+
+        .badge-pendiente {
+            background: #fff3cd;
+            color: #b68a00;
+            padding: 3px 7px;
+            border-radius: 10px;
+            font-size: 10px;
+            border: 1px solid #b68a00;
         }
 
         .badge-inactivo {
@@ -110,6 +120,7 @@
             border: 1px solid #b71c1c;
         }
 
+        /* Rating bar */
         .rating-text { font-weight: bold; color: #ff9800; }
 
         .rating-bar-container {
@@ -126,6 +137,7 @@
             border-radius: 4px;
         }
 
+        /* Summary box */
         .summary-box {
             margin-top: 18px;
             border-top: 2px solid #00c896;
@@ -195,9 +207,12 @@
             <th>ID</th>
             <th>Nombre completo</th>
             <th>Correo electrónico</th>
+            <th>Teléfono</th>
             <th>Puntaje</th>
+            <th>Total reciclajes</th>
             <th>Rating promedio</th>
             <th>Estado</th>
+            <th>Fecha de registro</th>
         </tr>
         </thead>
 
@@ -210,31 +225,46 @@
 
             <tr>
                 <td>{{ $r->id }}</td>
-                <td class="text-left">{{ $r->nombres }} {{ $r->apellidos }}</td>
-                <td class="text-left">{{ $r->email }}</td>
+
+                <td class="text-left">
+                    {{ $r->nombres }} {{ $r->apellidos }}
+                </td>
+
+                <td class="text-left">{{ $r->email ?? '—' }}</td>
+
+                <td>{{ $r->contacto ?? '—' }}</td>
+
                 <td>{{ $r->puntaje ?? 0 }}</td>
 
+                <td>{{ $r->total_reciclajes ?? 0 }}</td>
+
                 <td>
-                    <span class="rating-text">
-                        {{ number_format($rating, 1) }} / 5.0
-                    </span>
+                    <span class="rating-text">{{ number_format($rating, 1) }} / 5.0</span>
                     <div class="rating-bar-container">
-                        <div class="rating-bar-fill" style="width: {{ $ratingPercent }}%"></div>
+                        <div class="rating-bar-fill"
+                             style="width: {{ $ratingPercent }}%"></div>
                     </div>
                 </td>
 
                 <td>
-                    @if($r->estado === 'activo')
+                    @if ($r->estado === 'activo')
                         <span class="badge-activo">ACTIVO</span>
+                    @elseif ($r->estado === 'pendiente')
+                        <span class="badge-pendiente">PENDIENTE</span>
                     @else
                         <span class="badge-inactivo">INACTIVO</span>
                     @endif
+                </td>
+
+                <td>
+                    {{ $r->created_at ? Carbon::parse($r->created_at)->format('d/m/Y H:i') : '—' }}
                 </td>
             </tr>
         @endforeach
         </tbody>
     </table>
 
+    {{-- RESUMEN --}}
     <div class="summary-box">
         <strong>Resumen general</strong>
 
@@ -251,17 +281,21 @@
                 <td class="summary-label">Activos:</td>
                 <td>{{ $activos }}</td>
 
-                <td class="summary-label">Inactivos:</td>
-                <td>{{ $inactivos }}</td>
+                <td class="summary-label">Pendientes:</td>
+                <td>{{ $pendientes }}</td>
             </tr>
 
             <tr>
+                <td class="summary-label">Inactivos:</td>
+                <td>{{ $inactivos }}</td>
+
                 <td class="summary-label">Fuente:</td>
-                <td colspan="3">Panel administrativo Recocycle</td>
+                <td>Panel administrativo Recocycle</td>
             </tr>
         </table>
     </div>
 
+    {{-- FIRMA --}}
     <div class="firma">
         <p>______________________________</p>
         <span class="firma-nombre">Administrador General</span><br>
