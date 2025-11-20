@@ -12,81 +12,89 @@ use Inertia\Inertia;
 class CalificacionController extends Controller
 {
     /**
-     * 💬 Guardar una calificación (usuario ↔ recolector)
+     * 💬 Guardar calificación (usuario ↔ recolector)
      */
-public function store(Request $request)
-{
-    $data = $request->validate([
-        'punto_recoleccion_id' => ['required', 'exists:punto_recoleccions,id'],
-        'puntaje'              => ['required', 'integer', 'min:1', 'max:5'],
-        'comentario'           => ['nullable', 'string', 'max:400'],
-    ]);
-
-    /** @var Usuario $actor */
-    $actor = auth()->user();
-    $punto = PuntoRecoleccion::with(['usuario', 'recolector'])->findOrFail($data['punto_recoleccion_id']);
-
-    // 🔐 Validación de permisos
-    abort_unless(in_array($actor->id, [$punto->usuario_id, $punto->recolector_id]), 403);
-
-    // ⛔ Solo cuando la recolección esté completada
-    if ($punto->estado !== 'completado') {
-        return $this->respondError('Solo podés calificar cuando la recolección esté completada.');
-    }
-
-    // 👥 Identificar roles
-    $rolEvaluador = $actor->id === $punto->recolector_id ? 'recolector' : 'usuario';
-    $evaluadoId   = $rolEvaluador === 'recolector' ? $punto->usuario_id : $punto->recolector_id;
-
-    // 🚫 Evitar duplicados
-    $yaExiste = Calificacion::where('punto_recoleccion_id', $punto->id)
-        ->where('evaluador_id', $actor->id)
-        ->where('rol_evaluador', $rolEvaluador)
-        ->exists();
-
-    if ($yaExiste) {
-        return $this->respondError('Ya enviaste tu calificación para este punto.');
-    }
-
-    DB::transaction(function () use ($data, $punto, $actor, $rolEvaluador, $evaluadoId) {
-
-        // 🌟 Escala InDrive
-        $puntajeConvertido = (int)$data['puntaje'] * 2;
-
-        Calificacion::create([
-            'punto_recoleccion_id' => $punto->id,
-            'evaluador_id'         => $actor->id,
-            'evaluado_id'          => $evaluadoId,
-            'rol_evaluador'        => $rolEvaluador,
-            'puntaje'              => $puntajeConvertido,
-            'comentario'           => $data['comentario'] ?? null,
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'punto_recoleccion_id' => ['required', 'exists:punto_recoleccions,id'],
+            'puntaje'              => ['required', 'integer', 'min:1', 'max:5'],
+            'comentario'           => ['nullable', 'string', 'max:400'],
         ]);
 
-        // ⭐⭐⭐ AQUI EL FIX IMPORTANTE ⭐⭐⭐
-        $punto->ya_califique = true;
-        $punto->save();
+        /** @var Usuario $actor */
+        $actor = auth()->user();
+        $punto = PuntoRecoleccion::with(['usuario', 'recolector'])
+            ->findOrFail($data['punto_recoleccion_id']);
 
-        // 🔄 Recalcular rating del evaluado
-        $evaluado = Usuario::find($evaluadoId);
-        if ($evaluado) {
-            $promedioPuntos = Calificacion::where('evaluado_id', $evaluado->id)->avg('puntaje');
-            $promedioReal   = $promedioPuntos / 2;
+        // 🔐 Validación de permisos
+        abort_unless(
+            in_array($actor->id, [$punto->usuario_id, $punto->recolector_id]),
+            403
+        );
 
-            $evaluado->update([
-                'rating_promedio' => round($promedioReal, 2),
+        // ⛔ Solo cuando la recolección está completada
+        if (!in_array($punto->estado, ['completado'])) {
+            return $this->respondError('Solo podés calificar cuando la recolección esté completada.');
+        }
+
+        // 👥 Identificar roles
+        $rolEvaluador = $actor->id === $punto->recolector_id ? 'recolector' : 'usuario';
+        $evaluadoId   = $rolEvaluador === 'recolector'
+            ? $punto->usuario_id
+            : $punto->recolector_id;
+
+        // 🚫 Evitar duplicados por usuario/rol
+        $yaExiste = Calificacion::where('punto_recoleccion_id', $punto->id)
+            ->where('evaluador_id', $actor->id)
+            ->where('rol_evaluador', $rolEvaluador)
+            ->exists();
+
+        if ($yaExiste) {
+            return $this->respondError('Ya enviaste tu calificación para este punto.');
+        }
+
+        // 🧵 Transacción segura
+        DB::transaction(function () use ($data, $punto, $actor, $rolEvaluador, $evaluadoId) {
+
+            // Transformación InDrive (escala /2)
+            $puntajeConvertido = (int)$data['puntaje'] * 2;
+
+            // 📌 Crear calificación
+            Calificacion::create([
+                'punto_recoleccion_id' => $punto->id,
+                'evaluador_id'         => $actor->id,
+                'evaluado_id'          => $evaluadoId,
+                'rol_evaluador'        => $rolEvaluador,
+                'puntaje'              => $puntajeConvertido,
+                'comentario'           => $data['comentario'] ?? null,
             ]);
 
-            $evaluado->increment('puntaje', $puntajeConvertido);
-        }
-    });
+            // ⭐ Marcamos que este punto ya tiene al menos una calificación
+            $punto->ya_califique = true;
+            $punto->save();
 
-    // 📤 Devolver punto actualizado para auto-refresh
-    return response()->json([
-        'ok'     => true,
-        'message'=> '¡Gracias por tu calificación! 💚',
-        'punto'  => $punto->fresh()->load(['recolector', 'reciclaje']),
-    ]);
-}
+            // 🌟 Recalcular rating del evaluado
+            $evaluado = Usuario::find($evaluadoId);
+
+            if ($evaluado) {
+                // Promedio general del usuario/recolector
+                $promedio = Calificacion::where('evaluado_id', $evaluado->id)
+                    ->avg('puntaje');
+
+                $evaluado->rating_promedio = round($promedio / 2, 2);
+                $evaluado->puntaje += $puntajeConvertido;
+                $evaluado->save();
+            }
+        });
+
+        // 🔄 Respuesta para refrescar la UI
+        return response()->json([
+            'ok'      => true,
+            'message' => '¡Gracias por tu calificación! 💚',
+            'punto'   => $punto->fresh()->load(['recolector', 'reciclaje']),
+        ]);
+    }
 
     // ============================================================
     // 📋 Listado de calificaciones (solo admin)
@@ -115,7 +123,7 @@ public function store(Request $request)
     }
 
     // ============================================================
-    // 🏆 Ranking: top usuarios o recolectores
+    // 🏆 Ranking de usuarios o recolectores
     // ============================================================
     public function ranking(Request $request)
     {
@@ -141,7 +149,7 @@ public function store(Request $request)
     }
 
     // ============================================================
-    // 🧩 Helpers de respuesta
+    // 🧩 Helpers
     // ============================================================
     private function respondOk(string $message)
     {
