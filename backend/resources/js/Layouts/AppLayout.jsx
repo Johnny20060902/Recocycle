@@ -1,9 +1,10 @@
 import AppLayout from "@/Layouts/AppLayout";
-import { useForm } from "@inertiajs/react";
+import { Link, useForm } from "@inertiajs/react";   // ✅ ESTA LÍNEA ARREGLA TODO
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
+
 
 export default function Layout({ title, children, auth }) {
   const { post } = useForm();
