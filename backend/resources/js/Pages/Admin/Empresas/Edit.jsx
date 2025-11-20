@@ -36,7 +36,6 @@ export default function EmpresaEdit({ auth, empresa }) {
         })(),
         activo: empresa.activo ? true : false,
 
-        // Contraseña ISO
         password: "",
         password_confirmation: "",
     });
@@ -73,17 +72,14 @@ export default function EmpresaEdit({ auth, empresa }) {
         formData.append("contacto", data.contacto || "");
         formData.append("activo", data.activo ? 1 : 0);
 
-        // Categorías
         data.categorias.forEach((cat, index) => {
             formData.append(`categorias[${index}]`, cat);
         });
 
-        // Logo
         if (data.logo instanceof File) {
             formData.append("logo", data.logo);
         }
 
-        // Contraseña ISO + confirmación
         if (data.password) {
             formData.append("password", data.password);
             formData.append(
@@ -100,29 +96,47 @@ export default function EmpresaEdit({ auth, empresa }) {
                 document.body.classList.remove("animate__pulse");
                 setIsSubmitting(false);
             },
-            onSuccess: () =>
+            onSuccess: () => {
                 Swal.fire({
                     icon: "success",
                     title: "Éxito",
                     text: "Empresa actualizada correctamente.",
-                    confirmButtonText: "OK",
-                    confirmButtonColor: "#6f42c1",
-                    background: "#fff",
-                    color: "#222",
-                    iconColor: "#2ecc71",
-                    showClass: { popup: "animate__animated animate__fadeInDown" },
-                    hideClass: { popup: "animate__animated animate__fadeOutUp" },
-                }).then(() => Inertia.visit(route("admin.empresas.index"))),
-            onError: () =>
+                    confirmButtonColor: "#00d4a1",
+                }).then(() => Inertia.visit(route("admin.empresas.index")));
+            },
+
+            onError: (errors) => {
+                setIsSubmitting(false);
+
+                // 🔥 Alerta especial para contraseñas débiles
+                if (errors.password) {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Contraseña no válida",
+                        html: `
+                            <p style="margin-bottom:6px;">La contraseña no cumple con las políticas de seguridad ISO-27001.</p>
+                            <p style="font-size:15px;">Debe contener:</p>
+                            <ul style="text-align:left;font-size:14px;">
+                                <li>Mínimo 8 caracteres</li>
+                                <li>Mayúsculas y minúsculas</li>
+                                <li>Números</li>
+                                <li>Al menos un símbolo (@$!%*#?&)</li>
+                                <li>No debe haber sido filtrada previamente</li>
+                            </ul>
+                        `,
+                        confirmButtonText: "Entendido",
+                        confirmButtonColor: "#d33",
+                    });
+                    return;
+                }
+
                 Swal.fire({
                     icon: "error",
                     title: "Error",
-                    text: "Revisa los campos. Hay errores en el formulario.",
-                    confirmButtonText: "OK",
+                    text: "Hay errores en el formulario. Por favor revisa los campos.",
                     confirmButtonColor: "#d33",
-                    background: "#fff",
-                    color: "#222",
-                }),
+                });
+            },
         });
     };
 
@@ -141,13 +155,11 @@ export default function EmpresaEdit({ auth, empresa }) {
             : [...data.categorias, cat];
 
         const sinTodo = ALL_CATEGORIES.filter((c) => c !== "Todo");
-        const tieneTodasMenosTodo = sinTodo.every((c) => nuevas.includes(c));
+        const tieneTodas = sinTodo.every((c) => nuevas.includes(c));
 
-        if (tieneTodasMenosTodo) {
-            nuevas.push("Todo");
-        } else {
-            nuevas = nuevas.filter((c) => c !== "Todo");
-        }
+        nuevas = tieneTodas
+            ? [...sinTodo, "Todo"]
+            : nuevas.filter((c) => c !== "Todo");
 
         setData("categorias", nuevas);
     };
@@ -158,7 +170,6 @@ export default function EmpresaEdit({ auth, empresa }) {
         if (file) setPreview(URL.createObjectURL(file));
     };
 
-    // Estilos según modo oscuro
     const textColor = darkMode ? "#eaeaea" : "#222";
     const secondaryText = darkMode ? "#bfbfbf" : "#555";
     const bgCard = darkMode ? "#181818" : "#ffffff";
@@ -191,7 +202,7 @@ export default function EmpresaEdit({ auth, empresa }) {
                                 : "btn-outline-secondary"
                         }`}
                     >
-                        <i className="bi bi-arrow-left-circle me-2"></i> Volver al listado
+                        <i className="bi bi-arrow-left-circle me-2"></i> Volver
                     </Link>
                 </div>
 
@@ -289,7 +300,7 @@ export default function EmpresaEdit({ auth, empresa }) {
                                 </div>
                             </div>
 
-                            {/* Contraseña */}
+                            {/* Password */}
                             <div className="col-md-6">
                                 <label className="fw-semibold mb-1">
                                     Nueva contraseña (opcional)
@@ -301,7 +312,7 @@ export default function EmpresaEdit({ auth, empresa }) {
                                         style={inputBaseStyle}
                                         value={data.password}
                                         onChange={(e) => setData("password", e.target.value)}
-                                        placeholder="Cumple ISO 27001"
+                                        placeholder="Debe cumplir ISO 27001"
                                     />
                                     <button
                                         type="button"
@@ -321,7 +332,7 @@ export default function EmpresaEdit({ auth, empresa }) {
                                 )}
                             </div>
 
-                            {/* Confirmación */}
+                            {/* Confirm password */}
                             <div className="col-md-6">
                                 <label className="fw-semibold mb-1">
                                     Confirmar nueva contraseña
@@ -353,12 +364,6 @@ export default function EmpresaEdit({ auth, empresa }) {
                                         ></i>
                                     </button>
                                 </div>
-
-                                {errors?.password_confirmation && (
-                                    <small className="text-danger">
-                                        {errors.password_confirmation}
-                                    </small>
-                                )}
                             </div>
                         </div>
 
@@ -416,7 +421,7 @@ export default function EmpresaEdit({ auth, empresa }) {
                             </div>
                         </div>
 
-                        {/* Guardar */}
+                        {/* Botón */}
                         <div className="text-end mt-4">
                             <button
                                 id="btnGuardar"
