@@ -64,9 +64,11 @@
         }
 
         th {
-            background: linear-gradient(90deg, #003366, #00c896);
+            background: #003366;      /* 🔵 Fondo azul oscuro */
             color: #fff;
             font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
         }
 
         tbody tr:nth-child(even) { background-color: #f8f9fb; }
