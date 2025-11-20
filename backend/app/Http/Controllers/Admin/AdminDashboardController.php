@@ -71,16 +71,25 @@ class AdminDashboardController extends Controller
             ];
         });
 
-        // 🔹 Gráficos semanales (últimos 7 días)
-        $reciclajeSemanal = collect(range(0, 6))->map(function ($i) {
-            return (float) PuntoRecoleccion::whereDate('created_at', now()->subDays(6 - $i))
-                ->where('estado', 'completado')
-                ->sum('peso');
-        });
+// 🔹 Gráficos semanales (últimos 7 días)
+$reciclajeSemanal = collect(range(0, 6))->map(function ($i) {
+    $fecha = now()->subDays(6 - $i)->toDateString();
 
-        $usuariosNuevos = collect(range(0, 6))->map(function ($i) {
-            return Usuario::whereDate('created_at', now()->subDays(6 - $i))->count();
-        });
+    $valor = PuntoRecoleccion::whereDate('created_at', $fecha)
+        ->where('estado', 'completado')
+        ->sum('peso');
+
+    return (float) ($valor ?? 0);
+});
+
+$usuariosNuevos = collect(range(0, 6))->map(function ($i) {
+    $fecha = now()->subDays(6 - $i)->toDateString();
+
+    $valor = Usuario::whereDate('created_at', $fecha)->count();
+
+    return (int) ($valor ?? 0);
+});
+
 
         return Inertia::render('Admin/Dashboard', [
             'auth'                 => ['user' => auth()->user()],

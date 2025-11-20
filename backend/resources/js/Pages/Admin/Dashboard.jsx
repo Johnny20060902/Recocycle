@@ -55,32 +55,55 @@ export default function AdminDashboard({
   }, []);
 
   // === DATOS ===
-  const reciclajeData = reciclajeSemanal || [0, 0, 0, 0, 0, 0, 0];
-  const usuariosData = usuariosNuevos || [0, 0, 0, 0, 0, 0, 0];
+const reciclajeData = Array.isArray(reciclajeSemanal) && reciclajeSemanal.length === 7
+  ? reciclajeSemanal.map(v => Number(v) || 0)
+  : [0, 0, 0, 0, 0, 0, 0];
+
+const usuariosData = Array.isArray(usuariosNuevos) && usuariosNuevos.length === 7
+  ? usuariosNuevos.map(v => Number(v) || 0)
+  : [0, 0, 0, 0, 0, 0, 0];
+
   const topRecolectoresList = topRecolectores || [];
 
   const textColor = darkMode ? "#eaeaea" : "#333";
   const gridColor = darkMode ? "rgba(255,255,255,0.1)" : "#e9ecef";
   const bgCard = darkMode ? "#1b1b1b" : "#ffffff";
 
-  // 📊 Gráfico semanal
-  const ventasData = {
-    labels: ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"],
-    datasets: [
-      {
-        label: "Reciclaje (kg)",
-        backgroundColor: "#00c896",
-        data: reciclajeData,
-        borderRadius: 10,
-      },
-      {
-        label: "Usuarios nuevos",
-        backgroundColor: "#007bff",
-        data: usuariosData,
-        borderRadius: 10,
-      },
-    ],
-  };
+  const getLast7DaysLabels = () => {
+  const days = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"]; // español BO
+  let labels = [];
+
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(date.getDate() - i); // retroceder días
+
+    const dayName = days[date.getDay()];
+    labels.push(dayName);
+  }
+
+  return labels;
+};
+
+
+// 📊 Gráfico semanal
+const ventasData = {
+  labels: getLast7DaysLabels(),
+  datasets: [
+    {
+      label: "Reciclaje (kg)",
+      backgroundColor: "#00c896",
+      data: reciclajeData,
+      borderRadius: 10,
+    },
+    {
+      label: "Usuarios nuevos",
+      backgroundColor: "#007bff",
+      data: usuariosData,
+      borderRadius: 10,
+    },
+  ],
+};
+
 
   // 📈 Gráfico visitas
   const traficoData = {

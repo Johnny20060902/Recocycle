@@ -11,9 +11,7 @@ export default function Edit({ auth, usuario }) {
     const normalizarEstado = (raw) => {
         if (raw === true) return "activo";
         if (raw === false) return "inactivo";
-        if (raw === "activo" || raw === "inactivo" || raw === "pendiente") {
-            return raw;
-        }
+        if (["activo", "inactivo", "pendiente"].includes(raw)) return raw;
         return "activo";
     };
 
@@ -23,13 +21,17 @@ export default function Edit({ auth, usuario }) {
         email: usuario?.email ?? "",
         role: usuario?.role ?? "usuario",
         estado: normalizarEstado(usuario?.estado),
+
+        // 🔐 NUEVO: campos ISO
         password: "",
+        password_confirmation: "",
     });
 
     const [darkMode, setDarkMode] = useState(
         document.body.getAttribute("data-theme") === "dark"
     );
     const [showPassword, setShowPassword] = useState(false);
+    const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
 
     // Detectar cambios en modo oscuro
     useEffect(() => {
@@ -57,8 +59,8 @@ export default function Edit({ auth, usuario }) {
             cancelButtonColor: "#d33",
             confirmButtonText: "Sí, guardar",
             cancelButtonText: "Cancelar",
-        }).then((result) => {
-            if (result.isConfirmed) {
+        }).then((res) => {
+            if (res.isConfirmed) {
                 put(route("admin.usuarios.update", usuario.id), {
                     preserveScroll: true,
                     onSuccess: () =>
@@ -162,7 +164,7 @@ export default function Edit({ auth, usuario }) {
                                 )}
                             </div>
 
-                            {/* PASSWORD OPCIONAL CON OJITO */}
+                            {/* PASSWORD ISO27001 OPCIONAL */}
                             <div className="col-md-6">
                                 <label className="form-label fw-semibold">
                                     Nueva contraseña (opcional)
@@ -180,21 +182,46 @@ export default function Edit({ auth, usuario }) {
                                     <button
                                         type="button"
                                         className="btn btn-outline-secondary"
-                                        onClick={() => setShowPassword((prev) => !prev)}
-                                        tabIndex={-1}
+                                        onClick={() => setShowPassword(prev => !prev)}
                                     >
-                                        <i
-                                            className={
-                                                showPassword
-                                                    ? "bi bi-eye-slash-fill"
-                                                    : "bi bi-eye-fill"
-                                            }
-                                        ></i>
+                                        <i className={showPassword ? "bi bi-eye-slash-fill" : "bi bi-eye-fill"}></i>
                                     </button>
                                 </div>
                                 {errors.password && (
                                     <div className="invalid-feedback d-block">
                                         {errors.password}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* CONFIRMACION */}
+                            <div className="col-md-6">
+                                <label className="form-label fw-semibold">
+                                    Confirmar contraseña
+                                </label>
+                                <div className="input-group">
+                                    <input
+                                        type={showPasswordConfirm ? "text" : "password"}
+                                        className={`form-control form-control-lg rounded-3 ${
+                                            errors.password_confirmation ? "is-invalid" : ""
+                                        }`}
+                                        value={data.password_confirmation}
+                                        onChange={(e) =>
+                                            setData("password_confirmation", e.target.value)
+                                        }
+                                        placeholder="Repite la nueva contraseña"
+                                    />
+                                    <button
+                                        type="button"
+                                        className="btn btn-outline-secondary"
+                                        onClick={() => setShowPasswordConfirm(prev => !prev)}
+                                    >
+                                        <i className={showPasswordConfirm ? "bi bi-eye-slash-fill" : "bi bi-eye-fill"}></i>
+                                    </button>
+                                </div>
+                                {errors.password_confirmation && (
+                                    <div className="invalid-feedback d-block">
+                                        {errors.password_confirmation}
                                     </div>
                                 )}
                             </div>
@@ -253,6 +280,7 @@ export default function Edit({ auth, usuario }) {
                                 {processing ? "Guardando..." : "Guardar cambios"}
                             </button>
                         </div>
+
                     </form>
                 </div>
             </div>

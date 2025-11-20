@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
+use App\Rules\PasswordISO;
 
 class EmpresaController extends Controller
 {
@@ -41,9 +42,11 @@ class EmpresaController extends Controller
             'nombre'     => 'required|string|max:255',
             'correo'     => 'required|email|unique:empresas,correo|unique:usuarios,email',
             'contacto'   => 'nullable|string|max:20',
-            'password'   => 'required|string|min:6',
             'logo'       => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
             'categorias' => 'nullable|array',
+
+            // 🔐 ISO 27001 + confirmed
+            'password'   => ['required', 'confirmed', new PasswordISO],
         ]);
 
         // 📷 Logo
@@ -61,7 +64,7 @@ class EmpresaController extends Controller
             'activo'     => true,
         ]);
 
-        // 👤 Crear usuario recolector asociado a la empresa (mismo correo)
+        // 👤 Crear usuario recolector asociado
         Usuario::create([
             'nombres'         => $data['nombre'],
             'apellidos'       => 'Empresa',
@@ -70,7 +73,6 @@ class EmpresaController extends Controller
             'email'           => $data['correo'],
             'password'        => Hash::make($data['password']),
             'role'            => 'recolector',
-            // 🔥 IMPORTANTE: enum string, no boolean
             'estado'          => 'activo',
             'puntaje'         => 0,
             'rating_promedio' => 0.0,
@@ -106,14 +108,14 @@ class EmpresaController extends Controller
             'activo'     => 'boolean',
         ]);
 
-        // Validar password si se envía
+        // Validación de contraseña SOLO si se envía
         if ($request->filled('password')) {
             $request->validate([
-                'password' => 'string|min:6|confirmed',
+                'password' => ['nullable', 'confirmed', new PasswordISO],
             ]);
         }
 
-        // Logo
+        // 📷 Logo
         $data['logo'] = $empresa->logo;
         if ($request->hasFile('logo')) {
             if ($empresa->logo && Storage::disk('public')->exists($empresa->logo)) {
@@ -122,17 +124,17 @@ class EmpresaController extends Controller
             $data['logo'] = $request->file('logo')->store('logos', 'public');
         }
 
-        // Categorías como JSON siempre
+        // Categorías como JSON
         $data['categorias'] = json_encode($data['categorias'] ?? []);
         $data['activo']     = $request->boolean('activo');
 
-        // Guardar correo viejo para buscar usuario
+        // Guardar correo viejo
         $oldCorreo = $empresa->correo;
 
         // Actualizar empresa
         $empresa->update($data);
 
-        // 👤 Sincronizar usuario asociado (por correo y rol recolector)
+        // 👤 Sincronizar usuario asociado
         $usuario = Usuario::where('email', $oldCorreo)
             ->where('role', 'recolector')
             ->first();
@@ -141,9 +143,7 @@ class EmpresaController extends Controller
             $usuario->nombres  = $data['nombre'];
             $usuario->telefono = $data['contacto'] ?? $usuario->telefono;
             $usuario->email    = $data['correo'];
-
-            // Estado del usuario según empresa.activo
-            $usuario->estado = $data['activo'] ? 'activo' : 'inactivo';
+            $usuario->estado   = $data['activo'] ? 'activo' : 'inactivo';
 
             if ($request->filled('password')) {
                 $usuario->password = Hash::make($request->password);
@@ -152,7 +152,6 @@ class EmpresaController extends Controller
             $usuario->save();
         }
 
-        // Respuesta estándar
         return redirect()
             ->route('admin.empresas.index')
             ->with('success', 'Empresa actualizada correctamente.');

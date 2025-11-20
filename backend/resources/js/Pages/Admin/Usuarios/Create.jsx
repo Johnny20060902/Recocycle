@@ -12,6 +12,7 @@ export default function Create({ auth }) {
     apellidos: "",
     email: "",
     password: "",
+    password_confirmation: "",
     role: "usuario",
     estado: "activo",
   });
@@ -19,6 +20,8 @@ export default function Create({ auth }) {
   const [darkMode, setDarkMode] = useState(
     document.body.getAttribute("data-theme") === "dark"
   );
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
 
   useEffect(() => {
     const observer = new MutationObserver(() =>
@@ -61,7 +64,7 @@ export default function Create({ auth }) {
   return (
     <AppLayout title="Registrar Usuario" auth={auth}>
       <div className="container py-4 animate__animated animate__fadeInUp">
-        
+
         {/* ENCABEZADO */}
         <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4">
           <div>
@@ -96,7 +99,7 @@ export default function Create({ auth }) {
           <form onSubmit={handleSubmit}>
 
             <div className="row g-4">
-              
+
               {/* NOMBRES */}
               <div className="col-md-6">
                 <label className="form-label fw-semibold">Nombres</label>
@@ -151,17 +154,72 @@ export default function Create({ auth }) {
               {/* PASSWORD */}
               <div className="col-md-6">
                 <label className="form-label fw-semibold">Contraseña</label>
-                <input
-                  type="password"
-                  className={`form-control form-control-lg rounded-3 ${
-                    errors.password ? "is-invalid" : ""
-                  }`}
-                  value={data.password}
-                  onChange={(e) => setData("password", e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
-                />
+                <div className="input-group">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    className={`form-control form-control-lg rounded-3 ${
+                      errors.password ? "is-invalid" : ""
+                    }`}
+                    value={data.password}
+                    onChange={(e) => setData("password", e.target.value)}
+                    placeholder="Mínimo 8 caracteres (ISO)"
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                  >
+                    <i
+                      className={
+                        showPassword ? "bi bi-eye-slash-fill" : "bi bi-eye-fill"
+                      }
+                    ></i>
+                  </button>
+                </div>
+
                 {errors.password && (
-                  <div className="invalid-feedback">{errors.password}</div>
+                  <div className="invalid-feedback d-block">
+                    {errors.password}
+                  </div>
+                )}
+              </div>
+
+              {/* CONFIRMAR PASSWORD */}
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">Confirmar contraseña</label>
+                <div className="input-group">
+                  <input
+                    type={showPasswordConfirm ? "text" : "password"}
+                    className={`form-control form-control-lg rounded-3 ${
+                      errors.password_confirmation ? "is-invalid" : ""
+                    }`}
+                    value={data.password_confirmation}
+                    onChange={(e) =>
+                      setData("password_confirmation", e.target.value)
+                    }
+                    placeholder="Repite la contraseña"
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary"
+                    onClick={() =>
+                      setShowPasswordConfirm((prev) => !prev)
+                    }
+                  >
+                    <i
+                      className={
+                        showPasswordConfirm
+                          ? "bi bi-eye-slash-fill"
+                          : "bi bi-eye-fill"
+                      }
+                    ></i>
+                  </button>
+                </div>
+
+                {errors.password_confirmation && (
+                  <div className="invalid-feedback d-block">
+                    {errors.password_confirmation}
+                  </div>
                 )}
               </div>
 

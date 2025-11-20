@@ -1,3 +1,5 @@
+/* global route */
+
 import { useForm, Link } from "@inertiajs/react";
 import { Inertia } from "@inertiajs/inertia";
 import Swal from "sweetalert2";
@@ -34,7 +36,7 @@ export default function EmpresaEdit({ auth, empresa }) {
         })(),
         activo: empresa.activo ? true : false,
 
-        // 🔑 Campos nuevos para contraseña
+        // Contraseña ISO
         password: "",
         password_confirmation: "",
     });
@@ -42,12 +44,13 @@ export default function EmpresaEdit({ auth, empresa }) {
     const [preview, setPreview] = useState(
         empresa.logo ? `/storage/${empresa.logo}` : null
     );
+
     const [darkMode, setDarkMode] = useState(
         document.body.getAttribute("data-theme") === "dark"
     );
+
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // 👁‍🗨 Mostrar / ocultar contraseña
     const [showPassword, setShowPassword] = useState(false);
     const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
 
@@ -70,17 +73,17 @@ export default function EmpresaEdit({ auth, empresa }) {
         formData.append("contacto", data.contacto || "");
         formData.append("activo", data.activo ? 1 : 0);
 
-        // 📦 Categorías
+        // Categorías
         data.categorias.forEach((cat, index) => {
             formData.append(`categorias[${index}]`, cat);
         });
 
-        // 🖼 Logo (solo si se cambió)
+        // Logo
         if (data.logo instanceof File) {
             formData.append("logo", data.logo);
         }
 
-        // 🔐 Solo mandamos password si el usuario escribió algo
+        // Contraseña ISO + confirmación
         if (data.password) {
             formData.append("password", data.password);
             formData.append(
@@ -97,7 +100,7 @@ export default function EmpresaEdit({ auth, empresa }) {
                 document.body.classList.remove("animate__pulse");
                 setIsSubmitting(false);
             },
-            onSuccess: () => {
+            onSuccess: () =>
                 Swal.fire({
                     icon: "success",
                     title: "Éxito",
@@ -107,73 +110,41 @@ export default function EmpresaEdit({ auth, empresa }) {
                     background: "#fff",
                     color: "#222",
                     iconColor: "#2ecc71",
-                    showClass: {
-                        popup: "animate__animated animate__fadeInDown",
-                    },
-                    hideClass: {
-                        popup: "animate__animated animate__fadeOutUp",
-                    },
-                }).then(() => {
-                    Inertia.visit(route("admin.empresas.index"));
-                });
-
-                const btn = document.querySelector("#btnGuardar");
-                if (btn) {
-                    btn.classList.add("animate__animated", "animate__bounceIn");
-                    setTimeout(() => btn.classList.remove("animate__bounceIn"), 800);
-                }
-            },
-            onError: () => {
-                setIsSubmitting(false);
+                    showClass: { popup: "animate__animated animate__fadeInDown" },
+                    hideClass: { popup: "animate__animated animate__fadeOutUp" },
+                }).then(() => Inertia.visit(route("admin.empresas.index"))),
+            onError: () =>
                 Swal.fire({
                     icon: "error",
                     title: "Error",
-                    text: "Ocurrió un problema al actualizar la empresa.",
+                    text: "Revisa los campos. Hay errores en el formulario.",
                     confirmButtonText: "OK",
-                    confirmButtonColor: "#6c757d",
+                    confirmButtonColor: "#d33",
                     background: "#fff",
                     color: "#222",
-                    showClass: {
-                        popup: "animate__animated animate__shakeX",
-                    },
-                    hideClass: {
-                        popup: "animate__animated animate__fadeOut",
-                    },
-                });
-            },
+                }),
         });
     };
 
     const handleCheckbox = (cat) => {
-        // Lógica de "Todo" igual que en create
         if (cat === "Todo") {
             if (data.categorias.includes("Todo")) {
-                // Si ya estaba → limpiamos todas
                 setData("categorias", []);
             } else {
-                // Marcamos todas
                 setData("categorias", ALL_CATEGORIES);
             }
             return;
         }
 
-        let nuevas = [];
-
-        if (data.categorias.includes(cat)) {
-            // Quitar categoría
-            nuevas = data.categorias.filter((c) => c !== cat);
-        } else {
-            // Agregar categoría
-            nuevas = [...data.categorias, cat];
-        }
+        let nuevas = data.categorias.includes(cat)
+            ? data.categorias.filter((c) => c !== cat)
+            : [...data.categorias, cat];
 
         const sinTodo = ALL_CATEGORIES.filter((c) => c !== "Todo");
         const tieneTodasMenosTodo = sinTodo.every((c) => nuevas.includes(c));
 
         if (tieneTodasMenosTodo) {
-            if (!nuevas.includes("Todo")) {
-                nuevas.push("Todo");
-            }
+            nuevas.push("Todo");
         } else {
             nuevas = nuevas.filter((c) => c !== "Todo");
         }
@@ -187,7 +158,7 @@ export default function EmpresaEdit({ auth, empresa }) {
         if (file) setPreview(URL.createObjectURL(file));
     };
 
-    // 🎨 Colores según modo
+    // Estilos según modo oscuro
     const textColor = darkMode ? "#eaeaea" : "#222";
     const secondaryText = darkMode ? "#bfbfbf" : "#555";
     const bgCard = darkMode ? "#181818" : "#ffffff";
@@ -203,7 +174,8 @@ export default function EmpresaEdit({ auth, empresa }) {
     return (
         <AppLayout title="Editar Empresa" auth={auth}>
             <div className="container py-4 animate__animated animate__fadeIn">
-                {/* ======= ENCABEZADO ======= */}
+
+                {/* HEADER */}
                 <div className="d-flex justify-content-between align-items-center mb-4">
                     <h2
                         className="fw-bold mb-0"
@@ -223,17 +195,14 @@ export default function EmpresaEdit({ auth, empresa }) {
                     </Link>
                 </div>
 
-                {/* ======= FORMULARIO ======= */}
+                {/* FORM */}
                 <div
                     className="card border-0 shadow-lg rounded-4 p-4"
-                    style={{
-                        background: bgCard,
-                        color: textColor,
-                        transition: "all 0.3s ease",
-                    }}
+                    style={{ background: bgCard, color: textColor }}
                 >
                     <form onSubmit={handleSubmit}>
                         <div className="row g-3">
+
                             {/* Nombre */}
                             <div className="col-md-6">
                                 <label className="fw-semibold mb-1">
@@ -247,9 +216,7 @@ export default function EmpresaEdit({ auth, empresa }) {
                                     onChange={(e) => setData("nombre", e.target.value)}
                                 />
                                 {errors?.nombre && (
-                                    <small className="text-danger">
-                                        {errors.nombre}
-                                    </small>
+                                    <small className="text-danger">{errors.nombre}</small>
                                 )}
                             </div>
 
@@ -266,9 +233,7 @@ export default function EmpresaEdit({ auth, empresa }) {
                                     onChange={(e) => setData("contacto", e.target.value)}
                                 />
                                 {errors?.contacto && (
-                                    <small className="text-danger">
-                                        {errors.contacto}
-                                    </small>
+                                    <small className="text-danger">{errors.contacto}</small>
                                 )}
                             </div>
 
@@ -285,13 +250,11 @@ export default function EmpresaEdit({ auth, empresa }) {
                                     onChange={(e) => setData("correo", e.target.value)}
                                 />
                                 {errors?.correo && (
-                                    <small className="text-danger">
-                                        {errors.correo}
-                                    </small>
+                                    <small className="text-danger">{errors.correo}</small>
                                 )}
                             </div>
 
-                            {/* Logo actual */}
+                            {/* Logo */}
                             <div className="col-md-6">
                                 <label className="fw-semibold mb-1">Logo actual</label>
                                 <div className="d-flex align-items-center gap-3">
@@ -300,9 +263,7 @@ export default function EmpresaEdit({ auth, empresa }) {
                                         style={{
                                             width: "75px",
                                             height: "75px",
-                                            backgroundColor: darkMode
-                                                ? "#222"
-                                                : "#f8f9fa",
+                                            backgroundColor: darkMode ? "#222" : "#f8f9fa",
                                         }}
                                     >
                                         {preview ? (
@@ -318,6 +279,7 @@ export default function EmpresaEdit({ auth, empresa }) {
                                             ></i>
                                         )}
                                     </div>
+
                                     <input
                                         type="file"
                                         className="form-control shadow-sm rounded-pill"
@@ -327,7 +289,7 @@ export default function EmpresaEdit({ auth, empresa }) {
                                 </div>
                             </div>
 
-                            {/* 🔐 Nueva contraseña */}
+                            {/* Contraseña */}
                             <div className="col-md-6">
                                 <label className="fw-semibold mb-1">
                                     Nueva contraseña (opcional)
@@ -339,32 +301,27 @@ export default function EmpresaEdit({ auth, empresa }) {
                                         style={inputBaseStyle}
                                         value={data.password}
                                         onChange={(e) => setData("password", e.target.value)}
-                                        placeholder="Dejar vacío para no cambiar"
+                                        placeholder="Cumple ISO 27001"
                                     />
                                     <button
                                         type="button"
-                                        className="btn btn-outline-secondary ms-2 rounded-pill d-flex align-items-center"
-                                        onClick={() =>
-                                            setShowPassword((prev) => !prev)
-                                        }
+                                        className="btn btn-outline-secondary ms-2 rounded-pill"
+                                        onClick={() => setShowPassword((prev) => !prev)}
                                     >
                                         <i
                                             className={`bi ${
-                                                showPassword
-                                                    ? "bi-eye-slash"
-                                                    : "bi-eye"
+                                                showPassword ? "bi-eye-slash" : "bi-eye"
                                             }`}
                                         ></i>
                                     </button>
                                 </div>
+
                                 {errors?.password && (
-                                    <small className="text-danger">
-                                        {errors.password}
-                                    </small>
+                                    <small className="text-danger">{errors.password}</small>
                                 )}
                             </div>
 
-                            {/* Confirmar contraseña */}
+                            {/* Confirmación */}
                             <div className="col-md-6">
                                 <label className="fw-semibold mb-1">
                                     Confirmar nueva contraseña
@@ -376,16 +333,13 @@ export default function EmpresaEdit({ auth, empresa }) {
                                         style={inputBaseStyle}
                                         value={data.password_confirmation}
                                         onChange={(e) =>
-                                            setData(
-                                                "password_confirmation",
-                                                e.target.value
-                                            )
+                                            setData("password_confirmation", e.target.value)
                                         }
-                                        placeholder="Repite la nueva contraseña"
+                                        placeholder="Repite la contraseña"
                                     />
                                     <button
                                         type="button"
-                                        className="btn btn-outline-secondary ms-2 rounded-pill d-flex align-items-center"
+                                        className="btn btn-outline-secondary ms-2 rounded-pill"
                                         onClick={() =>
                                             setShowPasswordConfirm((prev) => !prev)
                                         }
@@ -399,14 +353,21 @@ export default function EmpresaEdit({ auth, empresa }) {
                                         ></i>
                                     </button>
                                 </div>
+
+                                {errors?.password_confirmation && (
+                                    <small className="text-danger">
+                                        {errors.password_confirmation}
+                                    </small>
+                                )}
                             </div>
                         </div>
 
-                        {/* ======= CATEGORÍAS ======= */}
+                        {/* Categorías */}
                         <div className="mt-4">
                             <label className="fw-semibold mb-2">
                                 Categorías que maneja:
                             </label>
+
                             <div className="row">
                                 {ALL_CATEGORIES.map((cat) => (
                                     <div className="col-md-3 col-6" key={cat}>
@@ -429,14 +390,13 @@ export default function EmpresaEdit({ auth, empresa }) {
                                     </div>
                                 ))}
                             </div>
+
                             {errors?.categorias && (
-                                <small className="text-danger d-block mt-1">
-                                    {errors.categorias}
-                                </small>
+                                <small className="text-danger">{errors.categorias}</small>
                             )}
                         </div>
 
-                        {/* ======= ESTADO ======= */}
+                        {/* Estado */}
                         <div className="mt-4">
                             <div className="form-check form-switch">
                                 <input
@@ -444,9 +404,7 @@ export default function EmpresaEdit({ auth, empresa }) {
                                     type="checkbox"
                                     id="activoSwitch"
                                     checked={data.activo}
-                                    onChange={(e) =>
-                                        setData("activo", e.target.checked)
-                                    }
+                                    onChange={(e) => setData("activo", e.target.checked)}
                                 />
                                 <label
                                     className="form-check-label fw-semibold"
@@ -458,23 +416,19 @@ export default function EmpresaEdit({ auth, empresa }) {
                             </div>
                         </div>
 
-                        {/* ======= BOTÓN GUARDAR ======= */}
+                        {/* Guardar */}
                         <div className="text-end mt-4">
                             <button
                                 id="btnGuardar"
                                 type="submit"
                                 disabled={isSubmitting}
                                 className={`btn rounded-pill px-4 py-2 fw-semibold shadow-sm ${
-                                    isSubmitting
-                                        ? "opacity-75 cursor-not-allowed"
-                                        : ""
+                                    isSubmitting ? "opacity-75 cursor-not-allowed" : ""
                                 }`}
                                 style={{
                                     background:
                                         "linear-gradient(90deg, #007bff 0%, #00d4a1 100%)",
                                     color: "#fff",
-                                    border: "none",
-                                    transition: "all 0.3s ease",
                                 }}
                             >
                                 {isSubmitting ? (
@@ -484,8 +438,8 @@ export default function EmpresaEdit({ auth, empresa }) {
                                     </>
                                 ) : (
                                     <>
-                                        <i className="bi bi-save me-2"></i> Guardar
-                                        cambios
+                                        <i className="bi bi-save me-2"></i>
+                                        Guardar cambios
                                     </>
                                 )}
                             </button>

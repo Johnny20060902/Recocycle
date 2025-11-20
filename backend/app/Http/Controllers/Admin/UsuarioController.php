@@ -7,6 +7,7 @@ use App\Models\Usuario;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Hash;
+use App\Rules\PasswordISO;
 
 class UsuarioController extends Controller
 {
@@ -50,12 +51,16 @@ class UsuarioController extends Controller
             'nombres'   => 'required|string|max:255',
             'apellidos' => 'required|string|max:255',
             'email'     => 'required|email|unique:usuarios,email',
-            'password'  => 'required|string|min:6',
             'role'      => 'required|string|in:admin,usuario,recolector',
             'estado'    => 'required|string|in:activo,inactivo,pendiente',
+
+            // 🔐 ISO 27001 + confirmed
+            'password'  => ['required', 'confirmed', new PasswordISO],
         ]);
 
+        // Encriptar password
         $data['password'] = Hash::make($data['password']);
+
         Usuario::create($data);
 
         return redirect()
@@ -84,9 +89,12 @@ class UsuarioController extends Controller
             'email'     => 'required|email|unique:usuarios,email,' . $usuario->id,
             'role'      => 'required|string|in:admin,usuario,recolector',
             'estado'    => 'required|string|in:activo,inactivo,pendiente',
-            'password'  => 'nullable|string|min:6',
+
+            // 🔐 Contraseña opcional con ISO 27001
+            'password'  => ['nullable', 'confirmed', new PasswordISO],
         ]);
 
+        // Solo actualizar si fue enviada
         if (!empty($data['password'])) {
             $data['password'] = Hash::make($data['password']);
         } else {

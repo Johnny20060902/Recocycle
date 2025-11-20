@@ -1,3 +1,5 @@
+/* global route */
+
 import { useForm, Link } from "@inertiajs/react";
 import Swal from "sweetalert2";
 import { useState, useEffect } from "react";
@@ -20,6 +22,7 @@ export default function EmpresaCreate({ auth }) {
     correo: "",
     contacto: "",
     password: "",
+    password_confirmation: "", // 🔐 Nuevo (ISO obligatorio)
     logo: null,
     categorias: [],
   });
@@ -28,8 +31,8 @@ export default function EmpresaCreate({ auth }) {
     document.body.getAttribute("data-theme") === "dark"
   );
   const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
 
-  // Detectar cambios del modo oscuro global
   useEffect(() => {
     const obs = new MutationObserver(() =>
       setDarkMode(document.body.getAttribute("data-theme") === "dark")
@@ -38,7 +41,6 @@ export default function EmpresaCreate({ auth }) {
     return () => obs.disconnect();
   }, []);
 
-  // Guardar
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -56,14 +58,13 @@ export default function EmpresaCreate({ auth }) {
         Swal.fire({
           icon: "error",
           title: "Error",
-          text: "Ocurrió un problema al registrar la empresa.",
+          text: "Hay errores en el formulario. Revísalos por favor.",
           confirmButtonColor: "#d33",
         });
       },
     });
   };
 
-  // Checkbox categorías + regla de "Todo"
   const handleCheckbox = (cat) => {
     if (cat === "Todo") {
       setData(
@@ -87,7 +88,6 @@ export default function EmpresaCreate({ auth }) {
     setData("categorias", nuevas);
   };
 
-  // 🎨 Estilos según tema
   const textColor = darkMode ? "#eaeaea" : "#222";
   const secondaryText = darkMode ? "#bfbfbf" : "#666";
   const bgCard = darkMode ? "#181818" : "#ffffff";
@@ -103,9 +103,8 @@ export default function EmpresaCreate({ auth }) {
   return (
     <AppLayout title="Registrar Empresa" auth={auth}>
       <div className="container py-4 animate__animated animate__fadeIn">
-        {/* ============================= */}
-        {/* ENCABEZADO                     */}
-        {/* ============================= */}
+
+        {/* HEADER */}
         <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
           <h2
             className="fw-bold mb-0"
@@ -126,9 +125,7 @@ export default function EmpresaCreate({ auth }) {
           </Link>
         </div>
 
-        {/* ============================= */}
-        {/* FORMULARIO                    */}
-        {/* ============================= */}
+        {/* FORMULARIO */}
         <div
           className="card border-0 shadow-lg rounded-4 p-4"
           style={{
@@ -139,11 +136,10 @@ export default function EmpresaCreate({ auth }) {
         >
           <form onSubmit={handleSubmit}>
             <div className="row g-3">
+
               {/* NOMBRE */}
               <div className="col-md-6">
-                <label className="fw-semibold mb-1">
-                  Nombre de la Empresa
-                </label>
+                <label className="fw-semibold mb-1">Nombre de la Empresa</label>
                 <input
                   type="text"
                   className="form-control shadow-sm rounded-pill"
@@ -151,7 +147,7 @@ export default function EmpresaCreate({ auth }) {
                   value={data.nombre}
                   onChange={(e) => setData("nombre", e.target.value)}
                 />
-                {errors?.nombre && (
+                {errors.nombre && (
                   <small className="text-danger">{errors.nombre}</small>
                 )}
               </div>
@@ -166,7 +162,7 @@ export default function EmpresaCreate({ auth }) {
                   value={data.contacto}
                   onChange={(e) => setData("contacto", e.target.value)}
                 />
-                {errors?.contacto && (
+                {errors.contacto && (
                   <small className="text-danger">{errors.contacto}</small>
                 )}
               </div>
@@ -181,14 +177,14 @@ export default function EmpresaCreate({ auth }) {
                   value={data.correo}
                   onChange={(e) => setData("correo", e.target.value)}
                 />
-                {errors?.correo && (
+                {errors.correo && (
                   <small className="text-danger">{errors.correo}</small>
                 )}
               </div>
 
               {/* CONTRASEÑA */}
               <div className="col-md-6">
-                <label className="fw-semibold mb-1">Contraseña</label>
+                <label className="fw-semibold mb-1">Contraseña (ISO)</label>
                 <div className="input-group">
                   <input
                     type={showPassword ? "text" : "password"}
@@ -196,21 +192,51 @@ export default function EmpresaCreate({ auth }) {
                     style={inputBaseStyle}
                     value={data.password}
                     onChange={(e) => setData("password", e.target.value)}
+                    placeholder="Mínimo 8 caracteres, fuerte"
                   />
                   <button
                     type="button"
-                    className="btn btn-outline-secondary ms-2 rounded-pill d-flex align-items-center"
+                    className="btn btn-outline-secondary ms-2 rounded-pill"
                     onClick={() => setShowPassword(!showPassword)}
+                  >
+                    <i className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"}`}></i>
+                  </button>
+                </div>
+                {errors.password && (
+                  <small className="text-danger">{errors.password}</small>
+                )}
+              </div>
+
+              {/* CONFIRMAR CONTRASEÑA */}
+              <div className="col-md-6">
+                <label className="fw-semibold mb-1">Confirmar contraseña</label>
+                <div className="input-group">
+                  <input
+                    type={showPasswordConfirm ? "text" : "password"}
+                    className="form-control shadow-sm rounded-pill"
+                    style={inputBaseStyle}
+                    value={data.password_confirmation}
+                    onChange={(e) =>
+                      setData("password_confirmation", e.target.value)
+                    }
+                    placeholder="Repite la contraseña"
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary ms-2 rounded-pill"
+                    onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
                   >
                     <i
                       className={`bi ${
-                        showPassword ? "bi-eye-slash" : "bi-eye"
+                        showPasswordConfirm ? "bi-eye-slash" : "bi-eye"
                       }`}
                     ></i>
                   </button>
                 </div>
-                {errors?.password && (
-                  <small className="text-danger">{errors.password}</small>
+                {errors.password_confirmation && (
+                  <small className="text-danger">
+                    {errors.password_confirmation}
+                  </small>
                 )}
               </div>
 
@@ -241,9 +267,7 @@ export default function EmpresaCreate({ auth }) {
               </div>
             </div>
 
-            {/* ============================= */}
-            {/* CATEGORÍAS                   */}
-            {/* ============================= */}
+            {/* CATEGORÍAS */}
             <div className="mt-4">
               <label className="fw-semibold mb-2">Categorías:</label>
 
@@ -270,16 +294,14 @@ export default function EmpresaCreate({ auth }) {
                 ))}
               </div>
 
-              {errors?.categorias && (
+              {errors.categorias && (
                 <small className="text-danger d-block mt-1">
                   {errors.categorias}
                 </small>
               )}
             </div>
 
-            {/* ============================= */}
-            {/* BOTÓN GUARDAR                */}
-            {/* ============================= */}
+            {/* BOTÓN GUARDAR */}
             <div className="text-end mt-4">
               <button
                 type="submit"
