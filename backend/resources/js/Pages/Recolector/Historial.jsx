@@ -21,9 +21,9 @@ export default function Historial({ auth, puntos = [] }) {
     return () => clearInterval(interval);
   }, [autoRefresh]);
 
-  /* ========================= 🖼️ CARRUSEL DE FOTOS ========================= */
+  /* ========================= 🖼️ CARRUSEL DE FOTOS (BACKEND: p.fotos) ========================= */
   const renderFotos = (p) => {
-    const fotos = p?.reciclaje?.imagenes_url || [];
+    const fotos = p?.fotos || [];
 
     if (!fotos.length) return null;
 
@@ -38,7 +38,11 @@ export default function Historial({ auth, puntos = [] }) {
               className={`carousel-item ${index === 0 ? "active" : ""}`}
             >
               <img
-                src={img}
+                src={
+                  img.startsWith("http")
+                    ? img
+                    : `/storage/${img}`
+                }
                 className="d-block w-100 rounded"
                 style={{ maxHeight: "220px", objectFit: "cover" }}
               />
