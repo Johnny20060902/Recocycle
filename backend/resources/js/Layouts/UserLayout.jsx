@@ -13,7 +13,7 @@ export default function UserLayout({ title, children, auth }) {
     localStorage.getItem("userTheme") === "dark"
   );
 
-  /* ========================= 🧩 MODE RESPONSIVO ========================= */
+  /* ========================= 🧩 MODO RESPONSIVO ========================= */
   useEffect(() => {
     const resize = () => setSidebarOpen(window.innerWidth >= 992);
     window.addEventListener("resize", resize);
@@ -103,6 +103,7 @@ export default function UserLayout({ title, children, auth }) {
       className={`d-flex ${darkMode ? "bg-dark text-light" : "bg-light text-dark"}`}
       style={{
         minHeight: "100vh",
+        width: "100%",
         transition: "background 0.3s ease, color 0.3s ease",
         overflowX: "hidden",
       }}
@@ -171,12 +172,13 @@ export default function UserLayout({ title, children, auth }) {
         </aside>
       )}
 
-      {/* ========================= 🟢 PANEL PRINCIPAL ========================= */}
+      {/* ========================= 🟢 CONTENEDOR PRINCIPAL ========================= */}
       <div
         className="flex-grow-1 d-flex flex-column"
         style={{
           marginLeft: sidebarOpen ? "250px" : "0",
           transition: "margin 0.3s ease",
+          minHeight: "100vh",
         }}
       >
         {/* ========================= NAVBAR ========================= */}
@@ -185,6 +187,7 @@ export default function UserLayout({ title, children, auth }) {
           style={{
             height: "70px",
             zIndex: 1060,
+            flexShrink: 0,
             background: darkMode
               ? "linear-gradient(90deg, #0b3d2e 0%, #005933 100%)"
               : "linear-gradient(90deg, #009e60 0%, #00d4a1 100%)",
@@ -231,10 +234,11 @@ export default function UserLayout({ title, children, auth }) {
 
         {/* ========================= CONTENIDO ========================= */}
         <main
-          className="flex-grow-1 p-4"
+          className="p-4"
           style={{
             height: "calc(100vh - 70px)",
             overflowY: "auto",
+            overflowX: "hidden",
             background: darkMode ? "#0b0b0b" : "#f8f9fa",
           }}
         >
@@ -246,6 +250,7 @@ export default function UserLayout({ title, children, auth }) {
           className={`text-center py-3 shadow-sm border-top ${
             darkMode ? "bg-dark text-secondary" : "bg-white text-muted"
           }`}
+          style={{ height: "70px", flexShrink: 0 }}
         >
           <small>
             © {new Date().getFullYear()} <strong>Recocycle</strong> — Unidos por un planeta más limpio ♻️
@@ -297,8 +302,6 @@ export default function UserLayout({ title, children, auth }) {
         input:checked + .slider:before {
           transform: translateX(24px);
         }
-
-        /* 🌿 Animación botón Reciclar */
         .animate-eco {
           animation: ecoPulse 3s ease-in-out infinite;
         }

@@ -93,8 +93,8 @@ export default function RecolectorLayout({ title, children, auth }) {
       className={`d-flex ${darkMode ? "bg-dark text-light" : "bg-light text-dark"}`}
       style={{
         minHeight: "100vh",
-        transition: "background 0.3s ease, color 0.3s ease",
         overflowX: "hidden",
+        transition: "background 0.3s ease, color 0.3s ease",
       }}
     >
       {/* ========================= 🟦 SIDEBAR ========================= */}
@@ -106,6 +106,7 @@ export default function RecolectorLayout({ title, children, auth }) {
             zIndex: 1040,
             background: "linear-gradient(180deg, #001f3f 0%, #0066a3 100%)",
             borderRight: "1px solid rgba(255,255,255,0.1)",
+            overflowY: "auto",
           }}
         >
           {/* Perfil usuario */}
@@ -133,13 +134,12 @@ export default function RecolectorLayout({ title, children, auth }) {
               <li key={item.name}>
                 <Link
                   href={route(item.route)}
-                  className={`nav-link d-flex align-items-center gap-2 px-3 py-2 rounded 
-                    ${
-                      route().current(item.route)
-                        ? "bg-info text-white shadow-sm"
-                        : "text-white opacity-85 hover-glow"
-                    }`}
-                  style={{ fontWeight: 500, transition: "0.2s" }}
+                  className={`nav-link d-flex align-items-center gap-2 px-3 py-2 rounded ${
+                    route().current(item.route)
+                      ? "bg-info text-white shadow-sm"
+                      : "text-white opacity-85 hover-glow"
+                  }`}
+                  style={{ fontWeight: 500 }}
                 >
                   <i className={`${item.icon} fs-5`}></i>
                   {item.name}
@@ -168,6 +168,7 @@ export default function RecolectorLayout({ title, children, auth }) {
         style={{
           marginLeft: sidebarOpen ? "250px" : "0px",
           transition: "margin 0.3s ease",
+          minHeight: "100vh",
         }}
       >
         {/* ========================= 🔵 NAVBAR SUPERIOR ========================= */}
@@ -177,6 +178,7 @@ export default function RecolectorLayout({ title, children, auth }) {
           }`}
           style={{
             height: "70px",
+            flexShrink: 0,
             background: darkMode
               ? "linear-gradient(90deg, #000c1a 0%, #002a4d 100%)"
               : "linear-gradient(90deg, #00b4ff 0%, #0078ff 100%)",
@@ -212,7 +214,11 @@ export default function RecolectorLayout({ title, children, auth }) {
 
             {/* Switch dark mode */}
             <label className="theme-switch mb-0">
-              <input type="checkbox" checked={darkMode} onChange={() => setDarkMode(!darkMode)} />
+              <input
+                type="checkbox"
+                checked={darkMode}
+                onChange={() => setDarkMode(!darkMode)}
+              />
               <span className="slider round"></span>
             </label>
           </div>
@@ -224,6 +230,7 @@ export default function RecolectorLayout({ title, children, auth }) {
           style={{
             height: "calc(100vh - 70px)",
             overflowY: "auto",
+            overflowX: "hidden",
             background: darkMode ? "#0b0b0b" : "#f8f9fa",
           }}
         >
@@ -235,6 +242,7 @@ export default function RecolectorLayout({ title, children, auth }) {
           className={`text-center py-3 shadow-sm border-top ${
             darkMode ? "bg-dark text-secondary border-secondary" : "bg-white text-muted"
           }`}
+          style={{ height: "70px", flexShrink: 0 }}
         >
           <small>
             © {new Date().getFullYear()} <strong>Recocycle</strong> — Unidos por un planeta limpio 🌎
