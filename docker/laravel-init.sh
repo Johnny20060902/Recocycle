@@ -21,17 +21,14 @@ if [ ! -f /var/www/html/storage/logs/laravel.log ]; then
 fi
 
 # ==========================
-# 3️⃣ Permisos correctos
-# Render **no usa www-data**
-# Usa el usuario propio del container.
+# 3️⃣ Permisos correctos para Render
+# Render NO usa www-data → el dueño del FS es root
+# Necesitamos permisos FULL para evitar "Permission denied"
 # ==========================
-echo "🔐 Corrigiendo permisos..."
-chown -R root:root /var/www/html/storage || true
-chown -R root:root /var/www/html/bootstrap/cache || true
+echo "🔐 Corrigiendo permisos fuertes (Render)..."
 
-chmod -R 775 /var/www/html/storage
-chmod -R 775 /var/www/html/bootstrap/cache
-chmod 666 /var/www/html/storage/logs/laravel.log
+chmod -R 777 /var/www/html/storage || true
+chmod -R 777 /var/www/html/bootstrap/cache || true
 
 # ==========================
 # 4️⃣ Crear storage:link seguro
@@ -51,7 +48,7 @@ php /var/www/html/artisan cache:clear || true
 php /var/www/html/artisan view:clear || true
 php /var/www/html/artisan route:clear || true
 
-# Evita que Laravel tire error si no existe .env aún
+# Evitar errores si el .env no existe
 php /var/www/html/artisan optimize || true
 
 echo "✅ Laravel listo para producción!"
