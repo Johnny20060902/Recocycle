@@ -20,9 +20,7 @@ Objetivos específicos:
 
 4.	Link al Video ilustrativo en YouTube (de 2 a 5 minutos máximo)
 
-
-
-
+https://youtu.be/6wbDgZOWLyM
 
 5.	Listado de los Requisitos Funcionales del Sistema
 RF-01 – Gestión de autenticación
