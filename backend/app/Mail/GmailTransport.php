@@ -21,54 +21,70 @@ class GmailTransport extends AbstractTransport
         $this->client->setClientId(env('GMAIL_CLIENT_ID'));
         $this->client->setClientSecret(env('GMAIL_CLIENT_SECRET'));
         $this->client->setRedirectUri(env('GMAIL_REDIRECT_URI'));
+
+        // Permiso para enviar correos
         $this->client->addScope(Gmail::GMAIL_SEND);
         $this->client->setAccessType('offline');
+        $this->client->setPrompt('consent');
     }
 
     public function doSend(SentMessage $sentMessage): void
     {
+        // Recuperar token
         $token = Cache::get('gmail_token');
 
         if (!$token) {
-            throw new \Exception("Google OAuth no está autenticado todavía.");
+            throw new \Exception("❌ Gmail OAuth no está autenticado. Ejecutá /google/oauth.");
         }
 
         $this->client->setAccessToken($token);
 
-        // Refrescar token si expiró
+        // Si expiró, renovar
         if ($this->client->isAccessTokenExpired()) {
-            $refresh = $this->client->getRefreshToken();
+
+            $refresh = Cache::get('gmail_refresh_token');
 
             if (!$refresh) {
-                throw new \Exception("No se encontró refresh_token para renovar.");
+                throw new \Exception("❌ No existe refresh_token almacenado.");
             }
 
             $newToken = $this->client->fetchAccessTokenWithRefreshToken($refresh);
+
             Cache::put('gmail_token', $newToken);
+
+            // Si el refresh token viene nuevamente, también lo actualizamos
+            if (isset($newToken['refresh_token'])) {
+                Cache::put('gmail_refresh_token', $newToken['refresh_token']);
+            }
         }
 
+        // Crear servicio Gmail
         $gmail = new Gmail($this->client);
 
-        // Aseguramos "From" correcto
-        $from = env('MAIL_FROM_ADDRESS');
+        // ---------------------------
+        // FORZAR REMITENTE REAL
+        // ---------------------------
+        $fromEmail = env('MAIL_FROM_ADDRESS');
         $fromName = env('MAIL_FROM_NAME', 'Recocycle');
 
+        // Convertimos el mensaje completo
         $raw = $sentMessage->toString();
 
-        // Forzar From en el RAW
+        // Reemplazar encabezado From (Gmail exige remitente autorizado)
         $raw = preg_replace(
             '/^From:.*$/m',
-            "From: {$fromName} <{$from}>",
+            "From: {$fromName} <{$fromEmail}>",
             $raw
         );
 
-        // Base64 URL-safe
+        // Gmail requiere base64 URL-safe
         $raw = base64_encode($raw);
         $raw = rtrim(strtr($raw, '+/', '-_'), '=');
 
         $gmailMessage = new Gmail\Message();
         $gmailMessage->setRaw($raw);
 
+        // Enviar
         $gmail->users_messages->send('me', $gmailMessage);
     }
 
