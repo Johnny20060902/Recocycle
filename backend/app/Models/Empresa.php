@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class Empresa extends Model
 {
@@ -16,6 +17,7 @@ class Empresa extends Model
      * Campos permitidos para asignación masiva
      */
     protected $fillable = [
+        'usuario_id',   // ✅ FALTABA ESTO
         'nombre',
         'correo',
         'contacto',
@@ -24,36 +26,36 @@ class Empresa extends Model
         'categorias',
     ];
 
-
     /**
-     * Convertir automáticamente el campo categorias a array al obtenerlo
+     * Casts automáticos
      */
     protected $casts = [
         'categorias' => 'array',
-        'activo' => 'boolean',
+        'activo'     => 'boolean',
     ];
 
     /**
-     * Encripta la contraseña automáticamente al asignarla
-     */
-    public function setPasswordAttribute($value)
-    {
-        if ($value && !Hash::needsRehash($value)) {
-            $this->attributes['password'] = Hash::make($value);
-        }
-    }
-
-    /**
-     * Devuelve la URL completa del logo (para vistas o APIs)
+     * Accesor para obtener el logo completo
      */
     public function getLogoUrlAttribute()
     {
-        return $this->logo ? asset('storage/' . $this->logo) : asset('images/default-logo.png');
+        if (!$this->logo) {
+            return asset('images/default-logo.png');
+        }
+
+        // Verificar que exista en storage
+        if (Storage::disk('public')->exists($this->logo)) {
+            return asset('storage/' . $this->logo);
+        }
+
+        return asset('images/default-logo.png');
     }
 
+    /**
+     * Relación con usuario (recolector)
+     */
     public function usuario()
-{
-    return $this->belongsTo(Usuario::class, 'usuario_id');
-}
-
+    {
+        return $this->belongsTo(Usuario::class, 'usuario_id');
+    }
 }
