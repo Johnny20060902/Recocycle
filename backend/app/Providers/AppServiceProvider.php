@@ -2,9 +2,11 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Vite;
-use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\GmailTransport;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -13,7 +15,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Aquí no va nada por ahora
     }
 
     /**
@@ -21,13 +23,18 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // 🔥 Prefetch de Vite
+        // 🔥 Prefetch de Vite (optimización)
         Vite::prefetch(concurrency: 3);
 
-        // 🔥 Fuerza HTTPS y dominio correcto en Render
+        // 🌐 Forzar HTTPS y URL correcta en Render
         if (config('app.env') === 'production') {
             URL::forceScheme('https');
-            URL::forceRootUrl(config('app.url')); // <-- OBLIGATORIO en Render
+            URL::forceRootUrl(config('app.url'));
         }
+
+        // ✉️ Registrar el transport personalizado de Gmail API
+        Mail::extend('gmail', function () {
+            return new GmailTransport();
+        });
     }
 }

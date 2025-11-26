@@ -8,6 +8,8 @@ use Inertia\Inertia;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CalificacionController;
 use App\Http\Controllers\RecolectorController;
+use App\Http\Controllers\GoogleOAuthController;
+
 
 
 // Panel Admin
@@ -49,6 +51,15 @@ Route::get('/', function () {
         'phpVersion'     => PHP_VERSION,
     ]);
 })->name('home');
+
+/*
+|--------------------------------------------------------------------------
+| RUTAS GOOGLE
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/google/oauth', [GoogleOAuthController::class, 'redirect'])->name('google.oauth');
+Route::get('/google/oauth/callback', [GoogleOAuthController::class, 'callback']);
 
 /*
 |--------------------------------------------------------------------------
