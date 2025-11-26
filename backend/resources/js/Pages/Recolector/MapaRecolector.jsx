@@ -360,9 +360,8 @@ export default function MapaRecolector({
     if (!categoriaSeleccionada) return puntos;
 
     return puntos.filter((p) => {
-      const categoriasEmpresa =
-        p.reciclaje?.empresa?.categorias?.map((c) => c.nombre) || [];
-      return categoriasEmpresa.includes(categoriaSeleccionada);
+      const categoriasPunto = p.reciclaje?.categorias || [];
+      return categoriasPunto.includes(categoriaSeleccionada);
     });
   }, [categoriaSeleccionada, puntos]);
 
