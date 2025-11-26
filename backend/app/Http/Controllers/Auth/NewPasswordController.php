@@ -12,12 +12,12 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
-use App\Rules\PasswordISO;   // 🔐 Reglas ISO-27001
+use App\Rules\PasswordISO;
 
 class NewPasswordController extends Controller
 {
     /**
-     * Mostrar formulario de reset password.
+     * Mostrar formulario de nueva contraseña.
      */
     public function create(Request $request): Response
     {
@@ -28,26 +28,25 @@ class NewPasswordController extends Controller
     }
 
     /**
-     * Procesar solicitud de nueva contraseña.
+     * Procesar el cambio de contraseña.
      */
     public function store(Request $request): RedirectResponse
     {
-        // 🔐 Validación endurecida ISO-27001
+        // Validación robusta
         $request->validate([
             'token'    => ['required'],
             'email'    => ['required', 'email'],
             'password' => [
                 'required',
                 'confirmed',
-                new PasswordISO,      // 🔥 Seguridad real
+                new PasswordISO,   // seguridad ISO-27001
             ],
         ]);
 
-        // 🧩 Reset de contraseña estándar de Laravel
+        // Reset estándar de Laravel
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user) use ($request) {
-
                 $user->forceFill([
                     'password'       => Hash::make($request->password),
                     'remember_token' => Str::random(60),
@@ -57,15 +56,16 @@ class NewPasswordController extends Controller
             }
         );
 
-        // 🎯 Respuestas
-        if ($status == Password::PASSWORD_RESET) {
+        // Si se reseteó correctamente
+        if ($status === Password::PASSWORD_RESET) {
             return redirect()
-                ->route('login')
-                ->with('status', __($status));
+                ->route('login')   // login universal → funciona para todos tus roles
+                ->with('status', __('passwords.reset'));
         }
 
+        // Error controlado
         throw ValidationException::withMessages([
-            'email' => [trans($status)],
+            'email' => [__($status)],
         ]);
     }
 }

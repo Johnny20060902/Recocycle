@@ -4,6 +4,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 
 export default function ResetPassword({ token, email }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -12,6 +13,8 @@ export default function ResetPassword({ token, email }) {
         password: '',
         password_confirmation: '',
     });
+
+    const [showRules, setShowRules] = useState(false);
 
     const submit = (e) => {
         e.preventDefault();
@@ -23,72 +26,99 @@ export default function ResetPassword({ token, email }) {
 
     return (
         <GuestLayout>
-            <Head title="Reset Password" />
+            <Head title="Restablecer contraseña" />
 
-            <form onSubmit={submit}>
-                <div>
-                    <InputLabel htmlFor="email" value="Email" />
+            <div className="w-full max-w-md mx-auto bg-white/75 dark:bg-white/10 backdrop-blur-xl p-6 rounded-xl shadow-md animate__animated animate__fadeIn">
 
-                    <TextInput
-                        id="email"
-                        type="email"
-                        name="email"
-                        value={data.email}
-                        className="mt-1 block w-full"
-                        autoComplete="username"
-                        onChange={(e) => setData('email', e.target.value)}
-                    />
+                <h1 className="text-2xl font-bold text-center text-green-700 dark:text-emerald-300 mb-4">
+                    🔐 Crear nueva contraseña
+                </h1>
 
-                    <InputError message={errors.email} className="mt-2" />
-                </div>
+                <p className="text-gray-700 dark:text-gray-300 text-sm mb-6 text-center">
+                    Ingresá tu nueva contraseña cumpliendo las reglas de seguridad ISO-27001.
+                </p>
 
-                <div className="mt-4">
-                    <InputLabel htmlFor="password" value="Password" />
+                <form onSubmit={submit} className="space-y-5">
 
-                    <TextInput
-                        id="password"
-                        type="password"
-                        name="password"
-                        value={data.password}
-                        className="mt-1 block w-full"
-                        autoComplete="new-password"
-                        isFocused={true}
-                        onChange={(e) => setData('password', e.target.value)}
-                    />
+                    {/* Email */}
+                    <div>
+                        <InputLabel htmlFor="email" value="Correo electrónico" />
+                        <TextInput
+                            id="email"
+                            type="email"
+                            name="email"
+                            value={data.email}
+                            className="mt-1 block w-full"
+                            autoComplete="username"
+                            disabled
+                        />
+                        <InputError message={errors.email} className="mt-2" />
+                    </div>
 
-                    <InputError message={errors.password} className="mt-2" />
-                </div>
+                    {/* Nueva contraseña */}
+                    <div>
+                        <InputLabel htmlFor="password" value="Nueva contraseña" />
 
-                <div className="mt-4">
-                    <InputLabel
-                        htmlFor="password_confirmation"
-                        value="Confirm Password"
-                    />
+                        <TextInput
+                            id="password"
+                            type="password"
+                            name="password"
+                            value={data.password}
+                            className="mt-1 block w-full"
+                            autoComplete="new-password"
+                            isFocused={true}
+                            onChange={(e) => {
+                                setData('password', e.target.value);
+                                setShowRules(true);
+                            }}
+                        />
 
-                    <TextInput
-                        type="password"
-                        id="password_confirmation"
-                        name="password_confirmation"
-                        value={data.password_confirmation}
-                        className="mt-1 block w-full"
-                        autoComplete="new-password"
-                        onChange={(e) =>
-                            setData('password_confirmation', e.target.value)
-                        }
-                    />
+                        <InputError message={errors.password} className="mt-2" />
 
-                    <InputError
-                        message={errors.password_confirmation}
-                        className="mt-2"
-                    />
-                </div>
+                        {showRules && (
+                            <div className="mt-3 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg text-xs space-y-1 text-gray-700 dark:text-gray-300 border">
+                                <p className="font-semibold text-green-700 dark:text-emerald-300 mb-1">
+                                    Requisitos ISO-27001:
+                                </p>
+                                <ul className="space-y-1">
+                                    <li>• Mínimo 8 caracteres</li>
+                                    <li>• Al menos 1 letra mayúscula</li>
+                                    <li>• Al menos 1 letra minúscula</li>
+                                    <li>• Al menos 1 número</li>
+                                    <li>• Al menos 1 carácter especial (!@#$%^&*)</li>
+                                </ul>
+                            </div>
+                        )}
+                    </div>
 
-                <div className="mt-4 flex items-center justify-end">
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        Reset Password
-                    </PrimaryButton>
-                </div>
-            </form>
+                    {/* Confirmación */}
+                    <div>
+                        <InputLabel htmlFor="password_confirmation" value="Confirmar contraseña" />
+
+                        <TextInput
+                            type="password"
+                            id="password_confirmation"
+                            name="password_confirmation"
+                            value={data.password_confirmation}
+                            className="mt-1 block w-full"
+                            autoComplete="new-password"
+                            onChange={(e) => setData('password_confirmation', e.target.value)}
+                        />
+
+                        <InputError message={errors.password_confirmation} className="mt-2" />
+                    </div>
+
+                    {/* Botón */}
+                    <div className="pt-2">
+                        <PrimaryButton
+                            className="w-full justify-center py-3 text-base rounded-lg shadow-sm active:scale-[0.97]"
+                            disabled={processing}
+                        >
+                            {processing ? "Guardando..." : "Cambiar contraseña"}
+                        </PrimaryButton>
+                    </div>
+                </form>
+            </div>
         </GuestLayout>
     );
 }
