@@ -5,10 +5,8 @@ namespace App\Mail;
 use Google\Client;
 use Google\Service\Gmail;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
-use Symfony\Component\Mime\RawMessage;
 use Symfony\Component\Mailer\SentMessage;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
 use Psr\Log\LoggerInterface;
 
 class GmailTransport extends AbstractTransport
@@ -46,26 +44,25 @@ class GmailTransport extends AbstractTransport
             }
 
             $newToken = $this->client->fetchAccessTokenWithRefreshToken($refresh);
-
             Cache::put('gmail_token', $newToken);
         }
 
         $gmail = new Gmail($this->client);
 
-        // --- FORZAR REMITENTE CORRECTO ---
+        // Aseguramos "From" correcto
         $from = env('MAIL_FROM_ADDRESS');
+        $fromName = env('MAIL_FROM_NAME', 'Recocycle');
 
-        // Convertir mensaje a RAW
         $raw = $sentMessage->toString();
 
-        // Reemplazar From incorrecto
+        // Forzar From en el RAW
         $raw = preg_replace(
             '/^From:.*$/m',
-            "From: Recocycle <{$from}>",
+            "From: {$fromName} <{$from}>",
             $raw
         );
 
-        // Gmail requiere Base64URL
+        // Base64 URL-safe
         $raw = base64_encode($raw);
         $raw = rtrim(strtr($raw, '+/', '-_'), '=');
 
