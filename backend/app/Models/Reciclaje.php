@@ -21,11 +21,11 @@ class Reciclaje extends Model
     ];
 
     protected $casts = [
-        'registros' => 'array',
-        'imagenes_url' => 'array',
+        'registros'     => 'array',
+        'imagenes_url'  => 'array',
     ];
 
-    // 🔗 Relaciones
+    /** Relaciones */
     public function usuario()
     {
         return $this->belongsTo(Usuario::class);
@@ -36,16 +36,15 @@ class Reciclaje extends Model
         return $this->belongsTo(Categoria::class);
     }
 
-    // 🔗 Un reciclaje puede generar un punto de recolección
     public function puntoRecoleccion()
     {
         return $this->hasOne(PuntoRecoleccion::class, 'reciclaje_id');
     }
+
+    /** Normalización de registros */
     public function getRegistrosAttribute($value)
     {
-        if (is_array($value)) {
-            return $value;
-        }
+        if (is_array($value)) return $value;
 
         $decoded = json_decode($value, true);
 

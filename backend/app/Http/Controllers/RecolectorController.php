@@ -12,7 +12,7 @@ use Inertia\Inertia;
 
 class RecolectorController extends Controller
 {
-    /** 📊 Panel principal del recolector */
+    /** 📊 Panel del recolector */
     public function index()
     {
         return Inertia::render('Recolector/Dashboard', [
@@ -20,112 +20,73 @@ class RecolectorController extends Controller
         ]);
     }
 
-    /** 🗺️ Vista del mapa de recolección */
-public function mapa()
-{
-    $hoy = now()->toDateString();
+    /** 🗺️ Mapa de recolección */
+    public function mapa()
+    {
+        $hoy = now()->toDateString();
 
-    // 🔹 1. Cargar puntos con relaciones necesarias
-    $puntos = PuntoRecoleccion::with([
-            'usuario:id,nombres,apellidos,role,email',
-            'reciclaje'
-        ])
-        ->whereHas('usuario', fn($q) => $q->where('role', 'usuario'))
-        ->whereNotNull('fecha_disponible')
-        ->whereDate('fecha_disponible', '>=', $hoy)
-        ->orderBy('fecha_disponible', 'asc')
-        ->select(
-            'id',
-            'usuario_id',
-            'reciclaje_id',
-            'recolector_id',
-            'latitud',
-            'longitud',
-            'material',
-            'peso',
-            'fecha',
-            'descripcion',
-            'fecha_disponible',
-            'hora_desde',
-            'hora_hasta',
-            'estado',
-            'solicitud_estado',
-            'foto_final'
-        )
-        ->get();
+        $puntos = PuntoRecoleccion::with([
+                'usuario:id,nombres,apellidos,role,email',
+                'reciclaje',
+                'reciclaje.categoria',  // 🔥 Necesario para filtro
+            ])
+            ->whereHas('usuario', fn($q) => $q->where('role', 'usuario'))
+            ->whereNotNull('fecha_disponible')
+            ->whereDate('fecha_disponible', '>=', $hoy)
+            ->orderBy('fecha_disponible', 'asc')
+            ->select(
+                'id', 'usuario_id', 'reciclaje_id', 'recolector_id',
+                'latitud', 'longitud', 'material', 'peso', 'descripcion',
+                'fecha', 'fecha_disponible', 'hora_desde', 'hora_hasta',
+                'estado', 'solicitud_estado', 'foto_final'
+            )
+            ->get();
 
-    // 🔧 2. Normalizar fotos y registros
-    $puntos = $this->prepararPuntosParaFront($puntos);
+        $puntos = $this->prepararPuntosParaFront($puntos);
 
-    // 🔥 3. NUEVO: obtener categorías reales (del admin)
-    // Estas categorías vienen de la tabla "categorias"
-    $categorias = \App\Models\Categoria::select('id', 'nombre', 'descripcion')
-        ->orderBy('nombre')
-        ->get();
+        $categorias = Categoria::select('id', 'nombre', 'descripcion')
+            ->orderBy('nombre')
+            ->get();
 
-    return Inertia::render('Recolector/MapaRecolector', [
-        'title'      => 'Mapa de Recolección',
-        'puntos'     => $puntos,
-        'categorias' => $categorias,
-        'auth'       => auth()->user(),
-    ]);
-}
+        return Inertia::render('Recolector/MapaRecolector', [
+            'title'      => 'Mapa de Recolección',
+            'puntos'     => $puntos,
+            'categorias' => $categorias,
+            'auth'       => auth()->user(),
+        ]);
+    }
 
-
-    /**
-     * ♻️ Obtener puntos disponibles para los recolectores (para axios route('recolector.puntos'))
-     */
+    /** ♻️ Puntos disponibles (Axios: route('recolector.puntos')) */
     public function puntos()
     {
         $hoy = now()->toDateString();
 
         $puntos = PuntoRecoleccion::with([
                 'usuario:id,nombres,apellidos,role,email',
-                'reciclaje', // 👈 traemos todo, incluyendo fotos
+                'reciclaje',
+                'reciclaje.categoria',  // 🔥 Necesario para que el filtro siga funcionando
             ])
-            // 🔍 Puntos creados por usuarios finales
             ->whereHas('usuario', fn($q) => $q->where('role', 'usuario'))
-            // ♻️ Mostrar puntos activos o pendientes
             ->whereIn('estado', ['pendiente', 'asignado', 'en_camino'])
-            // 📅 Mostrar puntos desde hoy en adelante
             ->whereDate('fecha_disponible', '>=', $hoy)
-            // 🕓 Ordenar por fecha próxima
             ->orderBy('fecha_disponible', 'asc')
-            // ✨ Campos relevantes del punto (incluimos foto_final)
             ->select(
-                'id',
-                'usuario_id',
-                'reciclaje_id',
-                'recolector_id',
-                'latitud',
-                'longitud',
-                'material',
-                'peso',
-                'descripcion',
-                'fecha',
-                'fecha_disponible',
-                'hora_desde',
-                'hora_hasta',
-                'estado',
-                'solicitud_estado',
-                'foto_final'
+                'id', 'usuario_id', 'reciclaje_id', 'recolector_id',
+                'latitud', 'longitud', 'material', 'peso', 'descripcion',
+                'fecha', 'fecha_disponible', 'hora_desde', 'hora_hasta',
+                'estado', 'solicitud_estado', 'foto_final'
             )
             ->get();
 
-        // 🔧 Normalizamos registros y fotos para el front (mismo formato que en mapa())
-        $puntos = $this->prepararPuntosParaFront($puntos);
-
-        return response()->json($puntos);
+        return response()->json($this->prepararPuntosParaFront($puntos));
     }
 
-    /**
-     * 📍 Obtener puntos cercanos al recolector (radio en km)
-     */
+    /** 📍 Puntos cercanos (geolocalización) */
     public function puntosCercanos(Request $request)
     {
-        $lat = $request->input('lat');
-        $lng = $request->input('lng');
-        $radio = $request->input('radio', 5); // Por defecto 5 km
+        $lat = $request->lat;
+        $lng = $request->lng;
+        $radio = $request->radio ?? 5;
 
         if (!$lat || !$lng) {
             return response()->json(['error' => 'Coordenadas no enviadas'], 400);
@@ -133,7 +94,8 @@ public function mapa()
 
         $puntos = PuntoRecoleccion::with([
                 'usuario:id,nombres,apellidos,role,email',
-                'reciclaje', // 👈 también aquí, por si usás este endpoint
+                'reciclaje',
+                'reciclaje.categoria', // 🔥 Necesario para filtro en cercanos
             ])
             ->selectRaw("
                 id, usuario_id, reciclaje_id, recolector_id,
@@ -149,54 +111,33 @@ public function mapa()
             ->orderBy('distancia', 'asc')
             ->get();
 
-        $puntos = $this->prepararPuntosParaFront($puntos);
-
-        return response()->json($puntos);
+        return response()->json($this->prepararPuntosParaFront($puntos));
     }
 
-    /**
-     * ✅ El recolector toma un punto (acepta solicitud)
-     * y cambia el estado del reciclaje a 'aceptado'
-     */
+    /** ☑️ Tomar un punto */
     public function tomar(Request $request, $puntoId)
     {
         $punto = PuntoRecoleccion::with('reciclaje')->findOrFail($puntoId);
 
-        // 🔍 Vincular reciclaje automáticamente si no tiene relación
         if (!$punto->reciclaje_id) {
-            $reciclajeRelacionado = Reciclaje::where('usuario_id', $punto->usuario_id)
-                ->latest()
-                ->first();
-
-            if ($reciclajeRelacionado) {
-                $punto->reciclaje_id = $reciclajeRelacionado->id;
-                $punto->save();
+            $ultimo = Reciclaje::where('usuario_id', $punto->usuario_id)->latest()->first();
+            if ($ultimo) {
+                $punto->update(['reciclaje_id' => $ultimo->id]);
             }
         }
 
-        // Si aún no se encuentra un reciclaje, devolvemos error controlado
-        if (!$punto->reciclaje && !$punto->reciclaje_id) {
-            return response()->json([
-                'ok' => false,
-                'msg' => 'No se encontró reciclaje asociado al punto.'
-            ], 422);
+        if (!$punto->reciclaje) {
+            return response()->json(['ok' => false, 'msg' => 'No se encontró reciclaje asociado.'], 422);
         }
 
         DB::transaction(function () use ($punto) {
-            $reciclaje = $punto->reciclaje ?? Reciclaje::find($punto->reciclaje_id);
-
-            if ($reciclaje) {
-                $reciclaje->estado = 'aceptado';
-                $reciclaje->save();
-            }
+            $punto->reciclaje->update(['estado' => 'aceptado']);
         });
 
-        return response()->json([
-            'ok' => true,
-            'msg' => 'Solicitud aceptada. Estado actualizado a "aceptado".'
-        ]);
+        return response()->json(['ok' => true, 'msg' => 'Solicitud aceptada.']);
     }
 
+    /** 🏆 Ranking de recolectores */
     public function ranking()
     {
         $recolectores = \App\Models\Usuario::where('role', 'recolector')
@@ -208,62 +149,49 @@ public function mapa()
         return response()->json(['recolectores' => $recolectores]);
     }
 
-    /**
-     * 🟩 Marcar recolección como completada (estado 'completado')
-     */
+    /** 🟢 Completar recolección */
     public function completar(Request $request, $puntoId)
     {
         $punto = PuntoRecoleccion::with('reciclaje')->findOrFail($puntoId);
 
         if (!$punto->reciclaje) {
-            return response()->json([
-                'ok' => false,
-                'msg' => 'No se encontró reciclaje asociado al punto.'
-            ], 422);
+            return response()->json(['ok' => false, 'msg' => 'No se encontró reciclaje asociado.'], 422);
         }
 
-        $punto->reciclaje->estado = 'completado';
-        $punto->reciclaje->save();
+        $punto->reciclaje->update(['estado' => 'completado']);
 
-        return response()->json([
-            'ok' => true,
-            'msg' => 'Recolección completada. Estado actualizado a "completado".'
+        return response()->json(['ok' => true, 'msg' => 'Recolección completada.']);
+    }
+
+    /** 📜 Historial del recolector */
+    public function historial()
+    {
+        $userId = Auth::id();
+
+        $puntos = PuntoRecoleccion::with([
+                'usuario:id,nombres,apellidos,rating_promedio',
+                'reciclaje',
+            ])
+            ->where('recolector_id', $userId)
+            ->latest()
+            ->get();
+
+        $puntos = $this->prepararPuntosParaFront($puntos);
+
+        $puntos = $puntos->map(function ($p) use ($userId) {
+            $p->ya_califique = $p->calificaciones()
+                ->where('evaluador_id', $userId)
+                ->exists();
+            return $p;
+        });
+
+        return Inertia::render('Recolector/Historial', [
+            'puntos' => $puntos,
+            'auth'   => Auth::user(),
         ]);
     }
 
-public function historial()
-{
-    $userId = Auth::id();
-
-    $puntos = PuntoRecoleccion::with([
-            'usuario:id,nombres,apellidos,rating_promedio',
-            'reciclaje' // 👈 NECESARIO para traer fotos
-        ])
-        ->where('recolector_id', $userId)
-        ->latest()
-        ->get();
-
-    // 🔥 Normalizamos fotos e imágenes para el carrusel
-    $puntos = $this->prepararPuntosParaFront($puntos);
-
-    // 🔥 Agregamos flag ya_califique por cada punto
-    $puntos = $puntos->map(function ($p) use ($userId) {
-        $p->ya_califique = $p->calificaciones()
-            ->where('evaluador_id', $userId)
-            ->exists();
-
-        return $p;
-    });
-
-    return Inertia::render('Recolector/Historial', [
-        'puntos' => $puntos,
-        'auth'   => Auth::user(),
-    ]);
-}
-
-    /**
-     * 📅 El recolector selecciona una fecha/hora y envía solicitud al usuario
-     */
+    /** 📬 Enviar solicitud */
     public function solicitar(Request $request, $puntoId)
     {
         $request->validate([
@@ -272,65 +200,50 @@ public function historial()
             'hora_hasta'  => 'required',
         ]);
 
-        $recolector = auth()->user();
         $punto = PuntoRecoleccion::findOrFail($puntoId);
 
-        // 🔍 Evitar duplicar solicitudes
         if ($punto->solicitud_estado === 'pendiente') {
-            return response()->json([
-                'ok' => false,
-                'msg' => 'Ya existe una solicitud pendiente para este punto.'
-            ], 422);
+            return response()->json(['ok' => false, 'msg' => 'Ya existe una solicitud pendiente.'], 422);
         }
 
-        // 📝 Actualizar punto con la solicitud del recolector
         $punto->update([
-            'recolector_id'        => $recolector->id,
+            'recolector_id'        => auth()->id(),
             'solicitud_estado'     => 'pendiente',
             'solicitud_fecha'      => $request->fecha,
             'solicitud_hora_desde' => $request->hora_desde,
             'solicitud_hora_hasta' => $request->hora_hasta,
         ]);
 
-        return response()->json([
-            'ok'  => true,
-            'msg' => 'Solicitud enviada correctamente al usuario.'
-        ]);
+        return response()->json(['ok' => true, 'msg' => 'Solicitud enviada.']);
     }
 
+    /** 🚗 Marcar en camino */
     public function enCamino($id)
     {
         $punto = PuntoRecoleccion::findOrFail($id);
 
-        // Validar que el recolector actual sea el asignado
         if ($punto->recolector_id !== auth()->id()) {
-            return response()->json(['ok' => false, 'msg' => 'No estás asignado a este punto.'], 403);
+            return response()->json(['ok' => false, 'msg' => 'No estás asignado.'], 403);
         }
 
         $punto->update(['estado' => 'en_camino']);
 
-        return response()->json([
-            'ok' => true,
-            'msg' => 'Punto marcado como "en camino"',
-        ]);
+        return response()->json(['ok' => true, 'msg' => 'Marcado en camino']);
     }
 
-    /**
-     * 📸 Finalizar recolección, subir foto y cerrar flujo
-     */
+    /** 📸 Finalizar recolección */
     public function finalizarRecoleccion(Request $request, $id)
     {
         $request->validate([
-            'foto_final' => 'required|image|max:5120', // 5 MB
+            'foto_final' => 'required|image|max:5120',
         ]);
 
         $punto = PuntoRecoleccion::findOrFail($id);
 
         if ($punto->recolector_id !== auth()->id()) {
-            return response()->json(['ok' => false, 'msg' => 'No estás asignado a este punto.'], 403);
+            return response()->json(['ok' => false, 'msg' => 'No estás asignado.'], 403);
         }
 
-        // Guardar la foto
         $path = $request->file('foto_final')->store('recolecciones_finales', 'public');
 
         $punto->update([
@@ -339,81 +252,56 @@ public function historial()
             'completado_at' => now(),
         ]);
 
-        // Actualizar reciclaje si existe
         if ($punto->reciclaje) {
             $punto->reciclaje->update(['estado' => 'completado']);
         }
 
         return response()->json([
             'ok'   => true,
-            'msg'  => 'Recolección finalizada correctamente.',
+            'msg'  => 'Recolección finalizada.',
             'foto' => asset('storage/' . $path),
         ]);
     }
 
-/**
- * 🔧 Normaliza registros y fotos para el frontend (p.fotos)
- */
-private function prepararPuntosParaFront($puntos)
-{
-    $puntos->each(function ($p) {
-        $fotosUsuario = [];
+    /** 🔧 Normalizar datos para React */
+    private function prepararPuntosParaFront($puntos)
+    {
+        $puntos->each(function ($p) {
+            $fotosUsuario = [];
 
-        if ($p->reciclaje) {
-            // -----------------------------
-            // 1) registros como array
-            // -----------------------------
-            if (isset($p->reciclaje->registros) && is_string($p->reciclaje->registros)) {
-                $decoded = json_decode($p->reciclaje->registros, true);
-                $p->reciclaje->registros = is_array($decoded) ? $decoded : [];
-            } elseif (!isset($p->reciclaje->registros) || !is_array($p->reciclaje->registros)) {
-                $p->reciclaje->registros = $p->reciclaje->registros ?? [];
-            }
+            if ($p->reciclaje) {
 
-            // -----------------------------
-            // 2) IMÁGENES DEL USUARIO
-            //    columna: reciclajes.imagenes_url
-            // -----------------------------
-            $imgs = $p->reciclaje->imagenes_url ?? [];
-
-            if (is_string($imgs)) {
-                // viene como JSON string
-                $decodedImgs = json_decode($imgs, true);
-                if (is_array($decodedImgs)) {
-                    $fotosUsuario = $decodedImgs;
-                } elseif (!empty($imgs)) {
-                    $fotosUsuario = [$imgs];
+                // registros → array limpio
+                if (is_string($p->reciclaje->registros)) {
+                    $decoded = json_decode($p->reciclaje->registros, true);
+                    $p->reciclaje->registros = is_array($decoded) ? $decoded : [];
+                } elseif (!is_array($p->reciclaje->registros)) {
+                    $p->reciclaje->registros = [];
                 }
-            } elseif (is_array($imgs)) {
-                $fotosUsuario = $imgs;
-            } elseif ($imgs) {
-                // por si viene como un solo string raro
-                $fotosUsuario = [$imgs];
+
+                // imágenes del usuario
+                $imgs = $p->reciclaje->imagenes_url ?? [];
+
+                if (is_string($imgs)) {
+                    $decodedImgs = json_decode($imgs, true);
+                    $imgs = is_array($decodedImgs) ? $decodedImgs : [$imgs];
+                }
+
+                $fotosUsuario = collect($imgs)
+                    ->filter(fn($v) => is_string($v) && trim($v) !== '')
+                    ->values()
+                    ->toArray();
             }
 
-            // limpiar: solo strings no vacíos
-            $fotosUsuario = array_values(
-                array_filter($fotosUsuario, fn ($v) => is_string($v) && trim($v) !== '')
-            );
+            // foto final del recolector
+            $fotos = $fotosUsuario;
+            if (!empty($p->foto_final)) {
+                $fotos[] = $p->foto_final;
+            }
 
-            // lo dejamos también en el reciclaje por si el front lo usa directo
-            $p->reciclaje->imagenes_url = $fotosUsuario;
-        }
+            $p->fotos = $fotos;
+        });
 
-        // -----------------------------
-        // 3) Foto final del recolector
-        // -----------------------------
-        $fotos = $fotosUsuario;
-
-        if (!empty($p->foto_final)) {
-            $fotos[] = $p->foto_final;
-        }
-
-        // 👈 ESTE campo es el que usa el carrusel en React
-        $p->fotos = $fotos;
-    });
-
-    return $puntos;
-}
-
+        return $puntos;
+    }
 }

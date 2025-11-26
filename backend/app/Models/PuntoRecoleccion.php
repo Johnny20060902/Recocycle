@@ -25,9 +25,21 @@ class PuntoRecoleccion extends Model
         'hora_desde',
         'hora_hasta',
         'estado',
+
+        // 🆕 CAMPOS DE SOLICITUD (faltaban en tu modelo)
+        'solicitud_estado',
+        'solicitud_fecha',
+        'solicitud_hora_desde',
+        'solicitud_hora_hasta',
+
+        // 🆕 FOTO FINAL (faltaba)
+        'foto_final',
+
+        // Tiempos del flujo
         'aceptado_at',
         'recogido_at',
         'completado_at',
+
         'codigo',
     ];
 
@@ -37,7 +49,7 @@ class PuntoRecoleccion extends Model
         'completado_at' => 'datetime',
     ];
 
-    // 🔗 Relaciones principales
+    /** Relaciones principales */
     public function usuario()
     {
         return $this->belongsTo(Usuario::class, 'usuario_id');
@@ -58,7 +70,7 @@ class PuntoRecoleccion extends Model
         return $this->hasMany(Calificacion::class, 'punto_recoleccion_id');
     }
 
-    // 🔍 Helpers de flujo
+    /** Helpers del flujo */
     public function puedeSerTomadoPor(Usuario $usuario): bool
     {
         return $this->estado === 'pendiente' && $usuario->role === 'recolector';
@@ -69,6 +81,7 @@ class PuntoRecoleccion extends Model
         return $this->estado === 'completado';
     }
 
+    /** Nombre legible del estado */
     public function getEstadoTextoAttribute(): string
     {
         return match ($this->estado) {
