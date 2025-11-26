@@ -18,10 +18,8 @@ class EmpresaController extends Controller
      */
     public function index()
     {
-        $empresas = Empresa::all();
-
         return Inertia::render('Admin/Empresas/Index', [
-            'empresas' => $empresas,
+            'empresas' => Empresa::with('usuario')->get(),
         ]);
     }
 
@@ -34,7 +32,7 @@ class EmpresaController extends Controller
     }
 
     /**
-     * 💾 Guardar nueva empresa + usuario asociado
+     * 💾 Registrar Empresa + Crear usuario recolector + Vincular empresa.usuario_id
      */
     public function store(Request $request)
     {
@@ -42,30 +40,19 @@ class EmpresaController extends Controller
             'nombre'     => 'required|string|max:255',
             'correo'     => 'required|email|unique:empresas,correo|unique:usuarios,email',
             'contacto'   => 'nullable|string|max:20',
-            'logo'       => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
+            'logo'       => 'nullable|image|mimes:jpg,png,jpeg|max:4096',
             'categorias' => 'nullable|array',
-
-            // 🔐 ISO 27001 + confirmed
             'password'   => ['required', 'confirmed', new PasswordISO],
         ]);
 
         // 📷 Logo
+        $logoPath = null;
         if ($request->hasFile('logo')) {
-            $data['logo'] = $request->file('logo')->store('logos', 'public');
+            $logoPath = $request->file('logo')->store('logos', 'public');
         }
 
-        // 🏢 Crear empresa
-        $empresa = Empresa::create([
-            'nombre'     => $data['nombre'],
-            'correo'     => $data['correo'],
-            'contacto'   => $data['contacto'],
-            'logo'       => $data['logo'] ?? null,
-            'categorias' => json_encode($data['categorias'] ?? []),
-            'activo'     => true,
-        ]);
-
         // 👤 Crear usuario recolector asociado
-        Usuario::create([
+        $usuario = Usuario::create([
             'nombres'         => $data['nombre'],
             'apellidos'       => 'Empresa',
             'telefono'        => $data['contacto'] ?? null,
@@ -75,21 +62,32 @@ class EmpresaController extends Controller
             'role'            => 'recolector',
             'estado'          => 'activo',
             'puntaje'         => 0,
-            'rating_promedio' => 0.0,
+            'rating_promedio' => 0,
+        ]);
+
+        // 🏢 Crear empresa y vinculación obligatoria usuario_id
+        Empresa::create([
+            'usuario_id' => $usuario->id,
+            'nombre'     => $data['nombre'],
+            'correo'     => $data['correo'],
+            'contacto'   => $data['contacto'],
+            'logo'       => $logoPath,
+            'categorias' => json_encode($data['categorias'] ?? []),
+            'activo'     => true,
         ]);
 
         return redirect()
             ->route('admin.empresas.index')
-            ->with('success', 'Empresa registrada correctamente y usuario creado.');
+            ->with('success', 'Empresa registrada y recolector creado correctamente.');
     }
 
     /**
-     * ✏️ Formulario de edición de empresa
+     * ✏️ Formulario edición
      */
     public function edit(Empresa $empresa)
     {
         return Inertia::render('Admin/Empresas/Edit', [
-            'empresa' => $empresa,
+            'empresa' => $empresa->load('usuario'),
         ]);
     }
 
@@ -98,76 +96,77 @@ class EmpresaController extends Controller
      */
     public function update(Request $request, Empresa $empresa)
     {
-        // Validación principal
         $data = $request->validate([
             'nombre'     => 'required|string|max:255',
             'correo'     => 'required|email|unique:empresas,correo,' . $empresa->id,
             'contacto'   => 'nullable|string|max:20',
-            'logo'       => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
+            'logo'       => 'nullable|image|mimes:jpg,png,jpeg|max:4096',
             'categorias' => 'nullable|array',
             'activo'     => 'boolean',
+            'password'   => ['nullable', 'confirmed', new PasswordISO],
         ]);
 
-        // Validación de contraseña SOLO si se envía
-        if ($request->filled('password')) {
-            $request->validate([
-                'password' => ['nullable', 'confirmed', new PasswordISO],
-            ]);
-        }
-
         // 📷 Logo
-        $data['logo'] = $empresa->logo;
+        $logoPath = $empresa->logo;
         if ($request->hasFile('logo')) {
-            if ($empresa->logo && Storage::disk('public')->exists($empresa->logo)) {
-                Storage::disk('public')->delete($empresa->logo);
+            if ($logoPath && Storage::disk('public')->exists($logoPath)) {
+                Storage::disk('public')->delete($logoPath);
             }
-            $data['logo'] = $request->file('logo')->store('logos', 'public');
+            $logoPath = $request->file('logo')->store('logos', 'public');
         }
 
-        // Categorías como JSON
-        $data['categorias'] = json_encode($data['categorias'] ?? []);
-        $data['activo']     = $request->boolean('activo');
-
-        // Guardar correo viejo
-        $oldCorreo = $empresa->correo;
-
-        // Actualizar empresa
-        $empresa->update($data);
-
-        // 👤 Sincronizar usuario asociado
-        $usuario = Usuario::where('email', $oldCorreo)
+        // Obtener usuario vinculado (RECOLECTOR)
+        $usuario = Usuario::where('id', $empresa->usuario_id)
             ->where('role', 'recolector')
             ->first();
 
+        // 👉 Guardar correo viejo para detectar cambios
+        $oldCorreo = $empresa->correo;
+
+        // 🏢 Actualizar empresa
+        $empresa->update([
+            'nombre'     => $data['nombre'],
+            'correo'     => $data['correo'],
+            'contacto'   => $data['contacto'],
+            'logo'       => $logoPath,
+            'categorias' => json_encode($data['categorias'] ?? []),
+            'activo'     => $request->boolean('activo'),
+        ]);
+
+        // 👤 Sincronizar usuario
         if ($usuario) {
-            $usuario->nombres  = $data['nombre'];
-            $usuario->telefono = $data['contacto'] ?? $usuario->telefono;
-            $usuario->email    = $data['correo'];
-            $usuario->estado   = $data['activo'] ? 'activo' : 'inactivo';
-
-            if ($request->filled('password')) {
-                $usuario->password = Hash::make($request->password);
-            }
-
-            $usuario->save();
+            $usuario->update([
+                'nombres'  => $data['nombre'],
+                'email'    => $data['correo'],
+                'telefono' => $data['contacto'] ?? $usuario->telefono,
+                'estado'   => $request->boolean('activo') ? 'activo' : 'inactivo',
+                'password' => $request->filled('password')
+                    ? Hash::make($data['password'])
+                    : $usuario->password,
+            ]);
         }
 
         return redirect()
             ->route('admin.empresas.index')
-            ->with('success', 'Empresa actualizada correctamente.');
+            ->with('success', 'Empresa y recolector actualizados correctamente.');
     }
 
     /**
-     * 🗑️ Eliminar empresa
+     * 🗑️ Eliminar empresa + logo + usuario recolector vinculado
      */
     public function destroy(Empresa $empresa)
     {
+        // Borrar logo físico
         if ($empresa->logo && Storage::disk('public')->exists($empresa->logo)) {
             Storage::disk('public')->delete($empresa->logo);
         }
 
+        // Eliminar usuario asociado
+        Usuario::where('id', $empresa->usuario_id)->delete();
+
+        // Eliminar empresa
         $empresa->delete();
 
-        return back()->with('success', 'Empresa eliminada correctamente.');
+        return back()->with('success', 'Empresa y usuario recolector eliminados correctamente.');
     }
 }

@@ -39,20 +39,8 @@ export default function Ranking({ auth }) {
   /* ============================
       🖼️ Foto del recolector
   ============================ */
-  const getFotoUrl = (reco) => {
-    if (reco.imagen) return reco.imagen;
-
-    if (reco.foto_url) {
-      return reco.foto_url.startsWith("http")
-        ? reco.foto_url
-        : `/storage/${reco.foto_url}`;
-    }
-
-    if (reco.empresa_logo) return `/storage/${reco.empresa_logo}`;
-
-    return "/images/default-recolector.png";
-  };
-
+ const getFotoUrl = (reco) => reco.foto_final || "/images/default-recolector.png";
+ 
   return (
     <RecolectorLayout title="Ranking de Recolectores" auth={auth}>
       <div
