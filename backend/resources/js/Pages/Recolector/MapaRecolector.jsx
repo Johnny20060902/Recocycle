@@ -356,12 +356,17 @@ export default function MapaRecolector({
   /* ============================
      FILTRO POR CATEGORÍAS REALES
   ============================= */
+
+  useEffect(() => {
+  console.log("PUNTOS:", puntos);
+}, [puntos]);
+
   const puntosFiltrados = useMemo(() => {
     if (!categoriaSeleccionada) return puntos;
 
     return puntos.filter((p) => {
-      const categoriasPunto = p.reciclaje?.categorias || [];
-      return categoriasPunto.includes(categoriaSeleccionada);
+      const nombreCategoria = p.reciclaje?.categoria?.nombre || null;
+      return nombreCategoria === categoriaSeleccionada;
     });
   }, [categoriaSeleccionada, puntos]);
 
