@@ -15,7 +15,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Aquí no va nada por ahora
+        // Registrar el mailer personalizado "gmail"
+        Mail::extend('gmail', function () {
+            return new GmailTransport();
+        });
     }
 
     /**
@@ -23,18 +26,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // 🔥 Prefetch de Vite (optimización)
+        // Optimización Vite
         Vite::prefetch(concurrency: 3);
 
-        // 🌐 Forzar HTTPS y URL correcta en Render
+        // Forzar HTTPS en producción (Render)
         if (config('app.env') === 'production') {
             URL::forceScheme('https');
             URL::forceRootUrl(config('app.url'));
         }
-
-        // ✉️ Registrar el transport personalizado de Gmail API
-        Mail::extend('gmail', function () {
-            return new GmailTransport();
-        });
     }
 }
