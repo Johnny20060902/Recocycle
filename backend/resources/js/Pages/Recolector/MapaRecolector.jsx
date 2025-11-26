@@ -340,12 +340,14 @@ export default function MapaRecolector({
     }
   };
 
-  const puntosFiltrados = useMemo(() => {
-    if (!categoriaSeleccionada) return puntos;
-    return puntos.filter(
-      (p) => p.reciclaje?.categoria_id === Number(categoriaSeleccionada)
-    );
-  }, [categoriaSeleccionada, puntos]);
+const puntosFiltrados = useMemo(() => {
+  if (!categoriaSeleccionada) return puntos;
+
+  return puntos.filter((p) => {
+    const categoriasPunto = p.reciclaje?.empresa?.categorias || [];
+    return categoriasPunto.includes(categoriaSeleccionada);
+  });
+}, [categoriaSeleccionada, puntos]);
 
   return (
     <RecolectorLayout title="Mapa de Recolección" auth={auth}>
@@ -363,21 +365,49 @@ export default function MapaRecolector({
                   Revisá fotos, horarios y enviá tu solicitud al usuario.
                 </p>
               </div>
-
               <div className="d-flex flex-column flex-sm-row gap-2 w-100 w-sm-auto">
-                <button
-                  onClick={obtenerUbicacion}
-                  className="btn btn-success w-100"
-                >
+
+                {/* UBICACIÓN */}
+                <button onClick={obtenerUbicacion} className="btn btn-success w-100">
                   📍 Mi ubicación
                 </button>
-                <button
-                  onClick={fetchPuntos}
-                  className="btn btn-outline-success w-100"
-                >
+
+                {/* ACTUALIZAR */}
+                <button onClick={fetchPuntos} className="btn btn-outline-success w-100">
                   🔄 Actualizar
                 </button>
+
+                {/* NUEVO SELECT FILTRO */}
+                <select
+                  className="form-select border-success fw-semibold"
+                  value={categoriaSeleccionada}
+                  onChange={(e) => setCategoriaSeleccionada(e.target.value)}
+                  style={{
+                    minWidth: "180px",
+                    cursor: "pointer",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  <option value="">🌎 Todas las categorías</option>
+
+                  {categorias.map((cat, i) => (
+                    <option key={i} value={cat}>
+                      ♻️ {cat}
+                    </option>
+                  ))}
+                </select>
+
+                {/* BOTÓN LIMPIAR */}
+                {categoriaSeleccionada !== "" && (
+                  <button
+                    className="btn btn-outline-danger fw-bold"
+                    onClick={() => setCategoriaSeleccionada("")}
+                  >
+                    ❌ Limpiar
+                  </button>
+                )}
               </div>
+
             </div>
           </div>
         </div>

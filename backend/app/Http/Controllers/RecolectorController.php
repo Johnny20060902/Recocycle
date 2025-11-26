@@ -23,53 +23,55 @@ class RecolectorController extends Controller
     /** 🗺️ Vista del mapa de recolección */
     public function mapa()
     {
-        $hoy = now()->toDateString();
+    $hoy = now()->toDateString();
 
-        // 🔹 Traemos todos los puntos con relaciones
-        $puntos = PuntoRecoleccion::with([
-                'usuario:id,nombres,apellidos,role,email',
-                // Traemos reciclaje completo (incluye columna fotos)
-                'reciclaje',
-            ])
-            ->whereHas('usuario', fn($q) => $q->where('role', 'usuario'))
-            ->whereNotNull('fecha_disponible')
-            ->whereDate('fecha_disponible', '>=', $hoy)
-            ->orderBy('fecha_disponible', 'asc')
-            ->select(
-                'id',
-                'usuario_id',
-                'reciclaje_id',
-                'recolector_id',
-                'latitud',
-                'longitud',
-                'material',
-                'peso',
-                'fecha',
-                'descripcion',
-                'fecha_disponible',
-                'hora_desde',
-                'hora_hasta',
-                'estado',
-                'solicitud_estado',
-                'foto_final' // 👈 importante para el carrusel
-            )
-            ->get();
+    // 🔹 Cargar puntos con relaciones necesarias
+    $puntos = PuntoRecoleccion::with([
+            'usuario:id,nombres,apellidos,role,email',
+            'reciclaje'
+        ])
+        ->whereHas('usuario', fn($q) => $q->where('role', 'usuario'))
+        ->whereNotNull('fecha_disponible')
+        ->whereDate('fecha_disponible', '>=', $hoy)
+        ->orderBy('fecha_disponible', 'asc')
+        ->select(
+            'id',
+            'usuario_id',
+            'reciclaje_id',
+            'recolector_id',
+            'latitud',
+            'longitud',
+            'material',
+            'peso',
+            'fecha',
+            'descripcion',
+            'fecha_disponible',
+            'hora_desde',
+            'hora_hasta',
+            'estado',
+            'solicitud_estado',
+            'foto_final'
+        )
+        ->get();
 
-        // 🔧 Normalizamos registros y fotos para el front
-        $puntos = $this->prepararPuntosParaFront($puntos);
+    // 🔧 Normalizar fotos y registros
+    $puntos = $this->prepararPuntosParaFront($puntos);
 
-        // 🔹 Traemos todas las categorías activas
-        $categorias = Categoria::select('id', 'nombre', 'descripcion')
-            ->orderBy('nombre')
-            ->get();
+    // 🔥 NUEVO: obtener categorías REALES desde las empresas
+    // Empresas -> categorias (json) -> aplanar -> únicas
+    $categorias = \App\Models\Empresa::whereNotNull('categorias')
+        ->pluck('categorias')     // colección de arrays
+        ->flatten()               // une todos en uno solo
+        ->unique()                // sin duplicados
+        ->values();               // indices limpios
 
-        return Inertia::render('Recolector/MapaRecolector', [
-            'title'      => 'Mapa de Recolección',
-            'puntos'     => $puntos,
-            'categorias' => $categorias,
-            'auth'       => auth()->user(),
-        ]);
-    }
+    return Inertia::render('Recolector/MapaRecolector', [
+        'title'      => 'Mapa de Recolección',
+        'puntos'     => $puntos,
+        'categorias' => $categorias,
+        'auth'       => auth()->user(),
+    ]);
+}
 
     /**
      * ♻️ Obtener puntos disponibles para los recolectores (para axios route('recolector.puntos'))
