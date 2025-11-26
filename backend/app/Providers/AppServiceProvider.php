@@ -11,28 +11,30 @@ use App\Mail\GmailTransport;
 class AppServiceProvider extends ServiceProvider
 {
     /**
-     * Register any application services.
+     * Register services.
      */
     public function register(): void
     {
-        // Registrar el mailer personalizado "gmail"
-        Mail::extend('gmail', function () {
-            return new GmailTransport();
-        });
+        // nada aquí, o Laravel explota
     }
 
     /**
-     * Bootstrap any application services.
+     * Bootstrap services.
      */
     public function boot(): void
     {
-        // Optimización Vite
+        // Vite optimización
         Vite::prefetch(concurrency: 3);
 
-        // Forzar HTTPS en producción (Render)
+        // Forzar HTTPS en producción
         if (config('app.env') === 'production') {
             URL::forceScheme('https');
             URL::forceRootUrl(config('app.url'));
         }
+
+        // 👇 REGISTRO CORRECTO PARA LARAVEL 12
+        Mail::extend('gmail', function ($config = []) {
+            return new GmailTransport();
+        });
     }
 }
