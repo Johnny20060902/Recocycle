@@ -19,7 +19,7 @@ class EmpresaController extends Controller
     public function index()
     {
         return Inertia::render('Admin/Empresas/Index', [
-            'empresas' => Empresa::with('usuario')->get(),
+            'empresas' => Empresa::with('usuario')->orderBy('id','desc')->get(),
         ]);
     }
 
@@ -37,12 +37,13 @@ class EmpresaController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'nombre'     => 'required|string|max:255',
-            'correo'     => 'required|email|unique:empresas,correo|unique:usuarios,email',
-            'contacto'   => 'nullable|string|max:20',
-            'logo'       => 'nullable|image|mimes:jpg,png,jpeg|max:4096',
-            'categorias' => 'nullable|array',
-            'password'   => ['required', 'confirmed', new PasswordISO],
+            'nombre'                 => 'required|string|max:255',
+            'correo'                 => 'required|email|unique:empresas,correo|unique:usuarios,email',
+            'contacto'               => 'nullable|string|max:20',
+            'logo'                   => 'nullable|image|mimes:jpg,png,jpeg|max:4096',
+            'categorias'             => 'nullable|array',
+            'password'               => ['required', 'confirmed', new PasswordISO],
+            'password_confirmation'  => 'required'
         ]);
 
         // 📷 Logo
@@ -65,7 +66,7 @@ class EmpresaController extends Controller
             'rating_promedio' => 0,
         ]);
 
-        // 🏢 Crear empresa y vinculación obligatoria usuario_id
+        // 🏢 Crear empresa y vincular usuario
         Empresa::create([
             'usuario_id' => $usuario->id,
             'nombre'     => $data['nombre'],
@@ -97,13 +98,14 @@ class EmpresaController extends Controller
     public function update(Request $request, Empresa $empresa)
     {
         $data = $request->validate([
-            'nombre'     => 'required|string|max:255',
-            'correo'     => 'required|email|unique:empresas,correo,' . $empresa->id,
-            'contacto'   => 'nullable|string|max:20',
-            'logo'       => 'nullable|image|mimes:jpg,png,jpeg|max:4096',
-            'categorias' => 'nullable|array',
-            'activo'     => 'boolean',
-            'password'   => ['nullable', 'confirmed', new PasswordISO],
+            'nombre'                 => 'required|string|max:255',
+            'correo'                 => 'required|email|unique:empresas,correo,' . $empresa->id,
+            'contacto'               => 'nullable|string|max:20',
+            'logo'                   => 'nullable|image|mimes:jpg,png,jpeg|max:4096',
+            'categorias'             => 'nullable|array',
+            'activo'                 => 'boolean',
+            'password'               => ['nullable', 'confirmed', new PasswordISO],
+            'password_confirmation'  => 'nullable|required_with:password'
         ]);
 
         // 📷 Logo
@@ -115,13 +117,10 @@ class EmpresaController extends Controller
             $logoPath = $request->file('logo')->store('logos', 'public');
         }
 
-        // Obtener usuario vinculado (RECOLECTOR)
+        // Usuario recolector asociado
         $usuario = Usuario::where('id', $empresa->usuario_id)
             ->where('role', 'recolector')
             ->first();
-
-        // 👉 Guardar correo viejo para detectar cambios
-        $oldCorreo = $empresa->correo;
 
         // 🏢 Actualizar empresa
         $empresa->update([
@@ -133,7 +132,7 @@ class EmpresaController extends Controller
             'activo'     => $request->boolean('activo'),
         ]);
 
-        // 👤 Sincronizar usuario
+        // 👤 Actualizar usuario asociado
         if ($usuario) {
             $usuario->update([
                 'nombres'  => $data['nombre'],
@@ -152,7 +151,7 @@ class EmpresaController extends Controller
     }
 
     /**
-     * 🗑️ Eliminar empresa + logo + usuario recolector vinculado
+     * 🗑️ Eliminar empresa + usuario recolector vinculado
      */
     public function destroy(Empresa $empresa)
     {
