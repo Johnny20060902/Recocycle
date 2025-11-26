@@ -43,11 +43,9 @@ const iconEnCamino = new L.Icon({
 ============================ */
 function SetViewToCurrent({ coords }) {
   const map = useMap();
-
   useEffect(() => {
     if (coords) map.setView([coords.lat, coords.lng], 13);
   }, [coords, map]);
-
   return null;
 }
 
@@ -133,7 +131,7 @@ function FotoCarousel({ fotos = [] }) {
 }
 
 /* ============================
-   BOTONES DEL RECOLECTOR
+   ACCIONES DEL RECOLECTOR
 ============================ */
 function AccionesRecolector({ punto, onActualizar }) {
   const postAccion = async (ruta, mensajeExito) => {
@@ -281,6 +279,9 @@ export default function MapaRecolector({
   const [loading, setLoading] = useState(true);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("");
 
+  /* ============================
+     GEOLOCALIZACIÓN
+  ============================= */
   const obtenerUbicacion = () => {
     if (!navigator.geolocation) {
       Swal.fire("Error", "Tu navegador no soporta geolocalización.", "error");
@@ -306,6 +307,9 @@ export default function MapaRecolector({
     );
   };
 
+  /* ============================
+     FETCH PUNTOS
+  ============================= */
   const fetchPuntos = async () => {
     try {
       const { data } = await axios.get(route("recolector.puntos"));
@@ -316,11 +320,17 @@ export default function MapaRecolector({
     }
   };
 
+  /* ============================
+     AUTO-REFRESH CADA 5s
+  ============================= */
   useEffect(() => {
     const interval = setInterval(fetchPuntos, 5000);
     return () => clearInterval(interval);
   }, []);
 
+  /* ============================
+     CARGA INICIAL
+  ============================= */
   useEffect(() => {
     const cargar = async () => {
       if (initialPuntos.length > 0) setLoading(false);
@@ -329,6 +339,9 @@ export default function MapaRecolector({
     cargar();
   }, []);
 
+  /* ============================
+     ÍCONOS POR ESTADO
+  ============================= */
   const iconoPorEstado = (estado) => {
     switch (estado) {
       case "completado":
@@ -340,20 +353,24 @@ export default function MapaRecolector({
     }
   };
 
-const puntosFiltrados = useMemo(() => {
-  if (!categoriaSeleccionada) return puntos;
+  /* ============================
+     FILTRO POR CATEGORÍAS REALES
+  ============================= */
+  const puntosFiltrados = useMemo(() => {
+    if (!categoriaSeleccionada) return puntos;
 
-  return puntos.filter((p) => {
-    const categoriasPunto = p.reciclaje?.empresa?.categorias || [];
-    return categoriasPunto.includes(categoriaSeleccionada);
-  });
-}, [categoriaSeleccionada, puntos]);
+    return puntos.filter((p) => {
+      const categoriasEmpresa =
+        p.reciclaje?.empresa?.categorias?.map((c) => c.nombre) || [];
+      return categoriasEmpresa.includes(categoriaSeleccionada);
+    });
+  }, [categoriaSeleccionada, puntos]);
 
   return (
     <RecolectorLayout title="Mapa de Recolección" auth={auth}>
       <div className="container py-4 animate__animated animate__fadeIn">
 
-        {/* ====== HEADER ====== */}
+        {/* ===== HEADER ===== */}
         <div className="mb-4">
           <div className="card border-0 shadow-sm rounded-4">
             <div className="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
@@ -365,40 +382,33 @@ const puntosFiltrados = useMemo(() => {
                   Revisá fotos, horarios y enviá tu solicitud al usuario.
                 </p>
               </div>
-              <div className="d-flex flex-column flex-sm-row gap-2 w-100 w-sm-auto">
 
-                {/* UBICACIÓN */}
+              <div className="d-flex flex-column flex-sm-row gap-2 w-100 w-sm-auto">
                 <button onClick={obtenerUbicacion} className="btn btn-success w-100">
                   📍 Mi ubicación
                 </button>
 
-                {/* ACTUALIZAR */}
                 <button onClick={fetchPuntos} className="btn btn-outline-success w-100">
                   🔄 Actualizar
                 </button>
 
-                {/* NUEVO SELECT FILTRO */}
+                {/* SELECT CATEGORÍAS */}
                 <select
                   className="form-select border-success fw-semibold"
                   value={categoriaSeleccionada}
                   onChange={(e) => setCategoriaSeleccionada(e.target.value)}
-                  style={{
-                    minWidth: "180px",
-                    cursor: "pointer",
-                    fontSize: "0.9rem",
-                  }}
+                  style={{ minWidth: "180px" }}
                 >
                   <option value="">🌎 Todas las categorías</option>
 
-                  {categorias.map((cat, i) => (
-                    <option key={i} value={cat}>
-                      ♻️ {cat}
+                  {categorias.map((cat) => (
+                    <option key={cat.id} value={cat.nombre}>
+                      ♻️ {cat.nombre}
                     </option>
                   ))}
                 </select>
 
-                {/* BOTÓN LIMPIAR */}
-                {categoriaSeleccionada !== "" && (
+                {categoriaSeleccionada && (
                   <button
                     className="btn btn-outline-danger fw-bold"
                     onClick={() => setCategoriaSeleccionada("")}
@@ -407,12 +417,11 @@ const puntosFiltrados = useMemo(() => {
                   </button>
                 )}
               </div>
-
             </div>
           </div>
         </div>
 
-        {/* ====== MAPA ====== */}
+        {/* ===== MAPA ===== */}
         {loading ? (
           <div
             className="d-flex flex-column align-items-center justify-content-center"
@@ -441,20 +450,17 @@ const puntosFiltrados = useMemo(() => {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
 
-              {/* ===== Ubicación del recolector ===== */}
+              {/* UBICACIÓN */}
               {coords && (
-                <Marker
-                  position={[coords.lat, coords.lng]}
-                  icon={iconRecolector}
-                >
+                <Marker position={[coords.lat, coords.lng]} icon={iconRecolector}>
                   <Popup>📍 Tu ubicación actual</Popup>
                 </Marker>
               )}
 
-              {/* ===== Marcadores de puntos ===== */}
-              {puntosFiltrados.map((p, i) => (
+              {/* PUNTOS */}
+              {puntosFiltrados.map((p) => (
                 <Marker
-                  key={p.id ?? i}
+                  key={p.id}
                   position={[p.latitud, p.longitud]}
                   icon={iconoPorEstado(p.estado)}
                 >
@@ -467,25 +473,20 @@ const puntosFiltrados = useMemo(() => {
                       <p className="small mb-1">
                         <strong>Material:</strong> {p.material} <br />
                         <strong>Fecha:</strong> {p.fecha_disponible} <br />
-                        <strong>Horario:</strong> {p.hora_desde} –{" "}
-                        {p.hora_hasta} <br />
+                        <strong>Horario:</strong> {p.hora_desde} – {p.hora_hasta} <br />
                         <strong>Estado:</strong>{" "}
                         <span className="badge bg-secondary">{p.estado}</span>
                       </p>
 
-                      {/* INFO SOLICITUD */}
+                      {/* SOLICITUD */}
                       {p.solicitud_estado && (
                         <div className="mb-2">
                           <strong>Solicitud:</strong>{" "}
                           {p.solicitud_estado === "pendiente" && (
-                            <span className="badge bg-warning text-dark">
-                              Pendiente
-                            </span>
+                            <span className="badge bg-warning text-dark">Pendiente</span>
                           )}
                           {p.solicitud_estado === "aceptada" && (
-                            <span className="badge bg-success">
-                              Aceptada ✓
-                            </span>
+                            <span className="badge bg-success">Aceptada ✓</span>
                           )}
                           {p.solicitud_estado === "rechazada" && (
                             <span className="badge bg-danger">Rechazada ✗</span>
@@ -495,8 +496,7 @@ const puntosFiltrados = useMemo(() => {
                             <p className="small text-muted mb-0 mt-1">
                               <strong>Fecha:</strong> {p.solicitud_fecha}
                               <br />
-                              {p.solicitud_hora_desde} –{" "}
-                              {p.solicitud_hora_hasta}
+                              {p.solicitud_hora_desde} – {p.solicitud_hora_hasta}
                             </p>
                           )}
                         </div>
@@ -506,10 +506,7 @@ const puntosFiltrados = useMemo(() => {
                       <FotoCarousel fotos={p.fotos || []} />
 
                       {/* ACCIONES */}
-                      <AccionesRecolector
-                        punto={p}
-                        onActualizar={fetchPuntos}
-                      />
+                      <AccionesRecolector punto={p} onActualizar={fetchPuntos} />
                     </div>
                   </Popup>
                 </Marker>
@@ -521,7 +518,7 @@ const puntosFiltrados = useMemo(() => {
         )}
       </div>
 
-      {/* ====== DARK MODE ====== */}
+      {/* DARK MODE */}
       <style>{`
         body[data-theme="dark"] .card {
           background: #1f1f1f !important;

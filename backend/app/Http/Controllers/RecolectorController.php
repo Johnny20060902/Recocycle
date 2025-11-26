@@ -21,11 +21,11 @@ class RecolectorController extends Controller
     }
 
     /** 🗺️ Vista del mapa de recolección */
-    public function mapa()
-    {
+public function mapa()
+{
     $hoy = now()->toDateString();
 
-    // 🔹 Cargar puntos con relaciones necesarias
+    // 🔹 1. Cargar puntos con relaciones necesarias
     $puntos = PuntoRecoleccion::with([
             'usuario:id,nombres,apellidos,role,email',
             'reciclaje'
@@ -54,16 +54,14 @@ class RecolectorController extends Controller
         )
         ->get();
 
-    // 🔧 Normalizar fotos y registros
+    // 🔧 2. Normalizar fotos y registros
     $puntos = $this->prepararPuntosParaFront($puntos);
 
-    // 🔥 NUEVO: obtener categorías REALES desde las empresas
-    // Empresas -> categorias (json) -> aplanar -> únicas
-    $categorias = \App\Models\Empresa::whereNotNull('categorias')
-        ->pluck('categorias')     // colección de arrays
-        ->flatten()               // une todos en uno solo
-        ->unique()                // sin duplicados
-        ->values();               // indices limpios
+    // 🔥 3. NUEVO: obtener categorías reales (del admin)
+    // Estas categorías vienen de la tabla "categorias"
+    $categorias = \App\Models\Categoria::select('id', 'nombre', 'descripcion')
+        ->orderBy('nombre')
+        ->get();
 
     return Inertia::render('Recolector/MapaRecolector', [
         'title'      => 'Mapa de Recolección',
@@ -72,6 +70,7 @@ class RecolectorController extends Controller
         'auth'       => auth()->user(),
     ]);
 }
+
 
     /**
      * ♻️ Obtener puntos disponibles para los recolectores (para axios route('recolector.puntos'))

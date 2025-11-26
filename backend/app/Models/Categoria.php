@@ -15,4 +15,10 @@ class Categoria extends Model
     {
         return $this->hasMany(Reciclaje::class);
     }
+
+    public function empresas()
+    {
+    return $this->belongsToMany(Empresa::class, 'categoria_empresa', 'categoria_id', 'empresa_id');
+    }
+
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Empresa;
 use App\Models\Usuario;
+use App\Models\Categoria;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
@@ -19,7 +20,7 @@ class EmpresaController extends Controller
     public function index()
     {
         return Inertia::render('Admin/Empresas/Index', [
-            'empresas' => Empresa::with('usuario')->orderBy('id','desc')->get(),
+            'empresas' => Empresa::with(['usuario','categorias'])->orderBy('id','desc')->get(),
         ]);
     }
 
@@ -28,31 +29,37 @@ class EmpresaController extends Controller
      */
     public function create()
     {
-        return Inertia::render('Admin/Empresas/Create');
+        return Inertia::render('Admin/Empresas/Create', [
+            'categorias' => Categoria::select('id','nombre')->orderBy('nombre')->get()
+        ]);
     }
 
     /**
-     * 💾 Registrar Empresa + Crear usuario recolector + Vincular empresa.usuario_id
+     * 💾 Registrar Empresa + Crear usuario recolector
      */
     public function store(Request $request)
-    {
+    {   
         $data = $request->validate([
             'nombre'                 => 'required|string|max:255',
             'correo'                 => 'required|email|unique:empresas,correo|unique:usuarios,email',
             'contacto'               => 'nullable|string|max:20',
             'logo'                   => 'nullable|image|mimes:jpg,png,jpeg|max:4096',
-            'categorias'             => 'nullable|array',
+
+            // AHORA categorías son ARRAY de IDs reales
+            'categorias'             => 'required|array',
+            'categorias.*'           => 'exists:categorias,id',
+
             'password'               => ['required', 'confirmed', new PasswordISO],
             'password_confirmation'  => 'required'
         ]);
 
-        // 📷 Logo
+        // 📷 Guardar logo si existe
         $logoPath = null;
         if ($request->hasFile('logo')) {
             $logoPath = $request->file('logo')->store('logos', 'public');
         }
 
-        // 👤 Crear usuario recolector asociado
+        // 👤 Crear usuario recolector
         $usuario = Usuario::create([
             'nombres'         => $data['nombre'],
             'apellidos'       => 'Empresa',
@@ -66,16 +73,18 @@ class EmpresaController extends Controller
             'rating_promedio' => 0,
         ]);
 
-        // 🏢 Crear empresa y vincular usuario
-        Empresa::create([
+        // 🏢 Crear empresa
+        $empresa = Empresa::create([
             'usuario_id' => $usuario->id,
             'nombre'     => $data['nombre'],
             'correo'     => $data['correo'],
             'contacto'   => $data['contacto'],
             'logo'       => $logoPath,
-            'categorias' => json_encode($data['categorias'] ?? []),
             'activo'     => true,
         ]);
+
+        // 🔗 Asignar categorías en tabla pivote
+        $empresa->categorias()->sync($data['categorias']);
 
         return redirect()
             ->route('admin.empresas.index')
@@ -88,7 +97,8 @@ class EmpresaController extends Controller
     public function edit(Empresa $empresa)
     {
         return Inertia::render('Admin/Empresas/Edit', [
-            'empresa' => $empresa->load('usuario'),
+            'empresa'    => $empresa->load(['usuario','categorias']),
+            'categorias' => Categoria::select('id','nombre')->orderBy('nombre')->get(),
         ]);
     }
 
@@ -102,7 +112,10 @@ class EmpresaController extends Controller
             'correo'                 => 'required|email|unique:empresas,correo,' . $empresa->id,
             'contacto'               => 'nullable|string|max:20',
             'logo'                   => 'nullable|image|mimes:jpg,png,jpeg|max:4096',
-            'categorias'             => 'nullable|array',
+
+            'categorias'             => 'required|array',
+            'categorias.*'           => 'exists:categorias,id',
+
             'activo'                 => 'boolean',
             'password'               => ['nullable', 'confirmed', new PasswordISO],
             'password_confirmation'  => 'nullable|required_with:password'
@@ -117,10 +130,8 @@ class EmpresaController extends Controller
             $logoPath = $request->file('logo')->store('logos', 'public');
         }
 
-        // Usuario recolector asociado
-        $usuario = Usuario::where('id', $empresa->usuario_id)
-            ->where('role', 'recolector')
-            ->first();
+        // Usuario asociado
+        $usuario = Usuario::find($empresa->usuario_id);
 
         // 🏢 Actualizar empresa
         $empresa->update([
@@ -128,16 +139,18 @@ class EmpresaController extends Controller
             'correo'     => $data['correo'],
             'contacto'   => $data['contacto'],
             'logo'       => $logoPath,
-            'categorias' => json_encode($data['categorias'] ?? []),
             'activo'     => $request->boolean('activo'),
         ]);
 
-        // 👤 Actualizar usuario asociado
+        // 🔗 Actualizar categorías pivote
+        $empresa->categorias()->sync($data['categorias']);
+
+        // 👤 Actualizar usuario vinculado
         if ($usuario) {
             $usuario->update([
                 'nombres'  => $data['nombre'],
                 'email'    => $data['correo'],
-                'telefono' => $data['contacto'] ?? $usuario->telefono,
+                'telefono' => $data['contacto'],
                 'estado'   => $request->boolean('activo') ? 'activo' : 'inactivo',
                 'password' => $request->filled('password')
                     ? Hash::make($data['password'])
@@ -155,15 +168,15 @@ class EmpresaController extends Controller
      */
     public function destroy(Empresa $empresa)
     {
-        // Borrar logo físico
+        // borrar logo
         if ($empresa->logo && Storage::disk('public')->exists($empresa->logo)) {
             Storage::disk('public')->delete($empresa->logo);
         }
 
-        // Eliminar usuario asociado
+        // eliminar usuario asociado
         Usuario::where('id', $empresa->usuario_id)->delete();
 
-        // Eliminar empresa
+        // eliminar empresa
         $empresa->delete();
 
         return back()->with('success', 'Empresa y usuario recolector eliminados correctamente.');

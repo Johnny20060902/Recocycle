@@ -58,4 +58,10 @@ class Empresa extends Model
     {
         return $this->belongsTo(Usuario::class, 'usuario_id');
     }
+
+    public function categorias()
+    {
+    return $this->belongsToMany(Categoria::class, 'categoria_empresa', 'empresa_id', 'categoria_id');
+    }
+    
 }

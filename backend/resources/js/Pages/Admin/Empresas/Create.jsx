@@ -6,25 +6,15 @@ import { useState, useEffect } from "react";
 import AppLayout from "@/Layouts/AppLayout";
 import "animate.css";
 
-const ALL_CATEGORIES = [
-  "Carton",
-  "Vidrios",
-  "Baterias",
-  "Electronicos",
-  "Organicos",
-  "Papel",
-  "Todo",
-];
-
-export default function EmpresaCreate({ auth }) {
+export default function EmpresaCreate({ auth, categorias }) {
   const { data, setData, post, progress, processing, errors } = useForm({
     nombre: "",
     correo: "",
     contacto: "",
     password: "",
-    password_confirmation: "", // 🔐 Nuevo (ISO obligatorio)
+    password_confirmation: "",
     logo: null,
-    categorias: [],
+    categorias: [], // ahora serán IDs reales
   });
 
   const [darkMode, setDarkMode] = useState(
@@ -65,27 +55,15 @@ export default function EmpresaCreate({ auth }) {
     });
   };
 
-  const handleCheckbox = (cat) => {
-    if (cat === "Todo") {
+  const toggleCategoria = (id) => {
+    if (data.categorias.includes(id)) {
       setData(
         "categorias",
-        data.categorias.includes("Todo") ? [] : ALL_CATEGORIES
+        data.categorias.filter((c) => c !== id)
       );
-      return;
+    } else {
+      setData("categorias", [...data.categorias, id]);
     }
-
-    let nuevas = data.categorias.includes(cat)
-      ? data.categorias.filter((c) => c !== cat)
-      : [...data.categorias, cat];
-
-    const sinTodo = ALL_CATEGORIES.filter((c) => c !== "Todo");
-    const tieneTodas = sinTodo.every((c) => nuevas.includes(c));
-
-    nuevas = tieneTodas
-      ? [...sinTodo, "Todo"]
-      : nuevas.filter((c) => c !== "Todo");
-
-    setData("categorias", nuevas);
   };
 
   const textColor = darkMode ? "#eaeaea" : "#222";
@@ -103,7 +81,6 @@ export default function EmpresaCreate({ auth }) {
   return (
     <AppLayout title="Registrar Empresa" auth={auth}>
       <div className="container py-4 animate__animated animate__fadeIn">
-
         {/* HEADER */}
         <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
           <h2
@@ -136,7 +113,6 @@ export default function EmpresaCreate({ auth }) {
         >
           <form onSubmit={handleSubmit}>
             <div className="row g-3">
-
               {/* NOMBRE */}
               <div className="col-md-6">
                 <label className="fw-semibold mb-1">Nombre de la Empresa</label>
@@ -267,27 +243,27 @@ export default function EmpresaCreate({ auth }) {
               </div>
             </div>
 
-            {/* CATEGORÍAS */}
+            {/* CATEGORÍAS REALES */}
             <div className="mt-4">
-              <label className="fw-semibold mb-2">Categorías:</label>
+              <label className="fw-semibold mb-2">Categorías asignadas:</label>
 
               <div className="row">
-                {ALL_CATEGORIES.map((cat) => (
-                  <div className="col-md-3 col-6" key={cat}>
+                {categorias.map((cat) => (
+                  <div className="col-md-3 col-6" key={cat.id}>
                     <div className="form-check">
                       <input
                         type="checkbox"
-                        id={cat}
+                        id={`cat-${cat.id}`}
                         className="form-check-input"
-                        checked={data.categorias.includes(cat)}
-                        onChange={() => handleCheckbox(cat)}
+                        checked={data.categorias.includes(cat.id)}
+                        onChange={() => toggleCategoria(cat.id)}
                       />
                       <label
-                        htmlFor={cat}
+                        htmlFor={`cat-${cat.id}`}
                         className="form-check-label"
                         style={{ color: secondaryText }}
                       >
-                        {cat}
+                        {cat.nombre}
                       </label>
                     </div>
                   </div>

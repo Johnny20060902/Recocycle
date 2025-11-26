@@ -4,23 +4,15 @@ import { useEffect, useState } from "react";
 import AppLayout from "@/Layouts/AppLayout";
 import "animate.css";
 
-const ALL_CATEGORIES = [
-  "Carton",
-  "Vidrios",
-  "Baterias",
-  "Electronicos",
-  "Organicos",
-  "Papel",
-  "Todo",
-];
-
 export default function EmpresasIndex({ auth, empresas = [] }) {
   const { delete: destroy } = useForm();
   const [darkMode, setDarkMode] = useState(
     document.body.getAttribute("data-theme") === "dark"
   );
 
-  // Detectar modo oscuro global
+  /** ==========================
+   * DETECTAR MODO OSCURO GLOBAL
+   ========================== **/
   useEffect(() => {
     const obs = new MutationObserver(() =>
       setDarkMode(document.body.getAttribute("data-theme") === "dark")
@@ -29,6 +21,9 @@ export default function EmpresasIndex({ auth, empresas = [] }) {
     return () => obs.disconnect();
   }, []);
 
+  /** ==========================
+   * ELIMINAR EMPRESA
+   ========================== **/
   const handleDelete = (id) => {
     Swal.fire({
       title: "¿Eliminar empresa?",
@@ -55,35 +50,9 @@ export default function EmpresasIndex({ auth, empresas = [] }) {
     });
   };
 
-  // Normalizar categorías
-  const getCategoriasArray = (categorias) => {
-    if (!categorias) return [];
-
-    let arr = [];
-
-    if (Array.isArray(categorias)) {
-      arr = categorias;
-    } else {
-      try {
-        const parsed = JSON.parse(categorias);
-        arr = Array.isArray(parsed) ? parsed : [];
-      } catch {
-        arr = categorias
-          .toString()
-          .split(",")
-          .map((c) => c.trim())
-          .filter((c) => c.length > 0);
-      }
-    }
-
-    if (arr.includes("Todo")) {
-      return ALL_CATEGORIES.filter((c) => c !== "Todo");
-    }
-
-    return arr;
-  };
-
-  // Colores según modo
+  /** ==========================
+   * COLORES MODO OSCURO
+   ========================== **/
   const textColor = darkMode ? "#eaeaea" : "#222";
   const secondaryText = darkMode ? "#bdbdbd" : "#555";
   const bgCard = darkMode ? "#171717" : "#ffffff";
@@ -109,9 +78,7 @@ export default function EmpresasIndex({ auth, empresas = [] }) {
             <p className="mb-0" style={{ color: secondaryText }}>
               Administra las empresas aliadas.
               {empresas.length > 0 && (
-                <span className="ms-1 fw-semibold">
-                  ({empresas.length} registradas)
-                </span>
+                <span className="ms-1 fw-semibold">({empresas.length})</span>
               )}
             </p>
           </div>
@@ -128,7 +95,7 @@ export default function EmpresasIndex({ auth, empresas = [] }) {
           </Link>
         </div>
 
-        {/* CARD CONTENEDOR */}
+        {/* CARD */}
         <div
           className="card border-0 shadow-lg rounded-4 overflow-hidden"
           style={{
@@ -137,7 +104,7 @@ export default function EmpresasIndex({ auth, empresas = [] }) {
             transition: "all .3s ease",
           }}
         >
-          {/* CARD HEADER */}
+          {/* HEADER */}
           <div
             className="card-header fw-semibold py-3"
             style={{
@@ -183,112 +150,107 @@ export default function EmpresasIndex({ auth, empresas = [] }) {
 
               <tbody>
                 {empresas.length > 0 ? (
-                  empresas.map((e) => {
-                    const categorias = getCategoriasArray(e.categorias);
+                  empresas.map((e) => (
+                    <tr
+                      key={e.id}
+                      className={`border-bottom ${
+                        darkMode ? "border-secondary-subtle" : "border-light"
+                      }`}
+                    >
+                      <td>
+                        {e.logo ? (
+                          <img
+                            src={`/storage/${e.logo}`}
+                            alt={e.nombre}
+                            className="rounded-circle border shadow-sm"
+                            style={{
+                              width: "50px",
+                              height: "50px",
+                              objectFit: "cover",
+                            }}
+                          />
+                        ) : (
+                          <span className="fst-italic small" style={{ color: secondaryText }}>
+                            Sin logo
+                          </span>
+                        )}
+                      </td>
 
-                    return (
-                      <tr
-                        key={e.id}
-                        className={`border-bottom ${
-                          darkMode ? "border-secondary-subtle" : "border-light"
-                        }`}
-                        style={{ transition: "background .2s" }}
-                      >
-                        <td>
-                          {e.logo ? (
-                            <img
-                              src={`/storage/${e.logo}`}
-                              alt={e.nombre}
-                              className="rounded-circle border shadow-sm"
-                              style={{
-                                width: "50px",
-                                height: "50px",
-                                objectFit: "cover",
-                              }}
-                            />
-                          ) : (
-                            <span className="fst-italic small" style={{ color: secondaryText }}>
-                              Sin logo
-                            </span>
-                          )}
-                        </td>
+                      <td className="fw-semibold">{e.nombre}</td>
+                      <td style={{ color: secondaryText }}>{e.correo}</td>
+                      <td style={{ color: secondaryText }}>{e.contacto}</td>
 
-                        <td className="fw-semibold">{e.nombre}</td>
-                        <td style={{ color: secondaryText }}>{e.correo}</td>
-                        <td style={{ color: secondaryText }}>{e.contacto}</td>
-
-                        <td>
-                          {categorias.length > 0 ? (
-                            <div className="d-flex flex-wrap justify-content-center gap-1">
-                              {categorias.map((cat) => (
-                                <span
-                                  key={cat}
-                                  className="badge rounded-pill px-3 py-1"
-                                  style={{
-                                    backgroundColor: darkMode
-                                      ? "rgba(0, 212, 161, 0.15)"
-                                      : "rgba(0, 102, 255, 0.08)",
-                                    color: darkMode ? "#4dd2a1" : "#0056b3",
-                                    border: darkMode
-                                      ? "1px solid rgba(0,212,161,0.4)"
-                                      : "1px solid rgba(0,102,255,0.3)",
-                                  }}
-                                >
-                                  {cat}
-                                </span>
-                              ))}
-                            </div>
-                          ) : (
-                            <span className="fst-italic small" style={{ color: secondaryText }}>
-                              Sin categorías
-                            </span>
-                          )}
-                        </td>
-
-                        <td>
-                          {e.activo ? (
-                            <span className="badge bg-success bg-opacity-75 px-3 py-2">
-                              Activa
-                            </span>
-                          ) : (
-                            <span className="badge bg-danger bg-opacity-75 px-3 py-2">
-                              Inactiva
-                            </span>
-                          )}
-                        </td>
-
-                        <td>
-                          <div className="d-flex justify-content-center gap-2 flex-wrap">
-                            <Link
-                              href={route("admin.empresas.edit", e.id)}
-                              className={`btn btn-sm rounded-pill px-3 d-flex align-items-center gap-1 shadow-sm ${
-                                darkMode
-                                  ? "btn-outline-info text-info"
-                                  : "btn-outline-primary"
-                              }`}
-                            >
-                              <i className="bi bi-pencil-square"></i> Editar
-                            </Link>
-
-                            <button
-                              onClick={() => handleDelete(e.id)}
-                              className={`btn btn-sm rounded-pill px-3 d-flex align-items-center gap-1 shadow-sm ${
-                                darkMode
-                                  ? "btn-outline-danger text-danger"
-                                  : "btn-outline-danger"
-                              }`}
-                            >
-                              <i className="bi bi-trash3-fill"></i> Eliminar
-                            </button>
+                      {/* CATEGORÍAS — AHORA SON REALES */}
+                      <td>
+                        {e.categorias && e.categorias.length > 0 ? (
+                          <div className="d-flex flex-wrap justify-content-center gap-1">
+                            {e.categorias.map((cat) => (
+                              <span
+                                key={cat.id}
+                                className="badge rounded-pill px-3 py-1"
+                                style={{
+                                  backgroundColor: darkMode
+                                    ? "rgba(0, 212, 161, 0.15)"
+                                    : "rgba(0, 102, 255, 0.08)",
+                                  color: darkMode ? "#4dd2a1" : "#0056b3",
+                                  border: darkMode
+                                    ? "1px solid rgba(0,212,161,0.4)"
+                                    : "1px solid rgba(0,102,255,0.3)",
+                                }}
+                              >
+                                {cat.nombre}
+                              </span>
+                            ))}
                           </div>
-                        </td>
-                      </tr>
-                    );
-                  })
+                        ) : (
+                          <span className="fst-italic small" style={{ color: secondaryText }}>
+                            Sin categorías
+                          </span>
+                        )}
+                      </td>
+
+                      <td>
+                        {e.activo ? (
+                          <span className="badge bg-success bg-opacity-75 px-3 py-2">
+                            Activa
+                          </span>
+                        ) : (
+                          <span className="badge bg-danger bg-opacity-75 px-3 py-2">
+                            Inactiva
+                          </span>
+                        )}
+                      </td>
+
+                      <td>
+                        <div className="d-flex justify-content-center gap-2 flex-wrap">
+                          <Link
+                            href={route("admin.empresas.edit", e.id)}
+                            className={`btn btn-sm rounded-pill px-3 d-flex align-items-center gap-1 shadow-sm ${
+                              darkMode
+                                ? "btn-outline-info text-info"
+                                : "btn-outline-primary"
+                            }`}
+                          >
+                            <i className="bi bi-pencil-square"></i> Editar
+                          </Link>
+
+                          <button
+                            onClick={() => handleDelete(e.id)}
+                            className={`btn btn-sm rounded-pill px-3 d-flex align-items-center gap-1 shadow-sm ${
+                              darkMode
+                                ? "btn-outline-danger text-danger"
+                                : "btn-outline-danger"
+                            }`}
+                          >
+                            <i className="bi bi-trash3-fill"></i> Eliminar
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
                 ) : (
                   <tr>
-                    <td
-                      colSpan="7"
+                    <td colSpan="7"
                       className="py-5 text-center fst-italic"
                       style={{ color: secondaryText }}
                     >

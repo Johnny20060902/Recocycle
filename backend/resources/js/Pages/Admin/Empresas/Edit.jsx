@@ -7,35 +7,17 @@ import { useEffect, useState } from "react";
 import AppLayout from "@/Layouts/AppLayout";
 import "animate.css";
 
-const ALL_CATEGORIES = [
-    "Carton",
-    "Vidrios",
-    "Baterias",
-    "Electronicos",
-    "Organicos",
-    "Papel",
-    "Todo",
-];
+export default function EmpresaEdit({ auth, empresa, categorias }) {
+    // Extraer IDs de categorías que ya tiene la empresa
+    const categoriasEmpresaIds = empresa.categorias?.map(c => c.id) ?? [];
 
-export default function EmpresaEdit({ auth, empresa }) {
     const { data, setData, errors } = useForm({
         nombre: empresa.nombre || "",
         correo: empresa.correo || "",
         contacto: empresa.contacto || "",
         logo: null,
-        categorias: (() => {
-            try {
-                return Array.isArray(empresa.categorias)
-                    ? empresa.categorias
-                    : JSON.parse(empresa.categorias);
-            } catch {
-                return empresa.categorias
-                    ? empresa.categorias.split(",").map((c) => c.trim())
-                    : [];
-            }
-        })(),
+        categorias: categoriasEmpresaIds,  // ← IDs reales
         activo: empresa.activo ? true : false,
-
         password: "",
         password_confirmation: "",
     });
@@ -44,21 +26,17 @@ export default function EmpresaEdit({ auth, empresa }) {
         empresa.logo ? `/storage/${empresa.logo}` : null
     );
 
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [darkMode, setDarkMode] = useState(
         document.body.getAttribute("data-theme") === "dark"
     );
 
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const [showPassword, setShowPassword] = useState(false);
-    const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
-
     useEffect(() => {
-        const observer = new MutationObserver(() =>
+        const obs = new MutationObserver(() =>
             setDarkMode(document.body.getAttribute("data-theme") === "dark")
         );
-        observer.observe(document.body, { attributes: true });
-        return () => observer.disconnect();
+        obs.observe(document.body, { attributes: true });
+        return () => obs.disconnect();
     }, []);
 
     const handleSubmit = (e) => {
@@ -72,8 +50,9 @@ export default function EmpresaEdit({ auth, empresa }) {
         formData.append("contacto", data.contacto || "");
         formData.append("activo", data.activo ? 1 : 0);
 
-        data.categorias.forEach((cat, index) => {
-            formData.append(`categorias[${index}]`, cat);
+        // ⬅ Enviar categorías como IDs reales
+        data.categorias.forEach((id, index) => {
+            formData.append(`categorias[${index}]`, id);
         });
 
         if (data.logo instanceof File) {
@@ -82,86 +61,34 @@ export default function EmpresaEdit({ auth, empresa }) {
 
         if (data.password) {
             formData.append("password", data.password);
-            formData.append(
-                "password_confirmation",
-                data.password_confirmation || ""
-            );
+            formData.append("password_confirmation", data.password_confirmation);
         }
 
         Inertia.post(route("admin.empresas.update", empresa.id), formData, {
-            onStart: () => {
-                document.body.classList.add("animate__animated", "animate__pulse");
-            },
-            onFinish: () => {
-                document.body.classList.remove("animate__pulse");
-                setIsSubmitting(false);
-            },
-            onSuccess: () => {
+            onFinish: () => setIsSubmitting(false),
+            onSuccess: () =>
                 Swal.fire({
                     icon: "success",
-                    title: "Éxito",
-                    text: "Empresa actualizada correctamente.",
+                    title: "Actualizado",
+                    text: "La empresa se actualizó correctamente.",
                     confirmButtonColor: "#00d4a1",
-                }).then(() => Inertia.visit(route("admin.empresas.index")));
-            },
-
-            onError: (errors) => {
-                setIsSubmitting(false);
-
-                // 🔥 Alerta especial para contraseñas débiles
-                if (errors.password) {
-                    Swal.fire({
-                        icon: "error",
-                        title: "Contraseña no válida",
-                        html: `
-                            <p style="margin-bottom:6px;">La contraseña no cumple con las políticas de seguridad ISO-27001.</p>
-                            <p style="font-size:15px;">Debe contener:</p>
-                            <ul style="text-align:left;font-size:14px;">
-                                <li>Mínimo 8 caracteres</li>
-                                <li>Mayúsculas y minúsculas</li>
-                                <li>Números</li>
-                                <li>Al menos un símbolo (@$!%*#?&)</li>
-                                <li>No debe haber sido filtrada previamente</li>
-                            </ul>
-                        `,
-                        confirmButtonText: "Entendido",
-                        confirmButtonColor: "#d33",
-                    });
-                    return;
-                }
-
+                }).then(() => Inertia.visit(route("admin.empresas.index"))),
+            onError: () =>
                 Swal.fire({
                     icon: "error",
                     title: "Error",
-                    text: "Hay errores en el formulario. Por favor revisa los campos.",
+                    text: "Revisa los campos.",
                     confirmButtonColor: "#d33",
-                });
-            },
+                }),
         });
     };
 
-    const handleCheckbox = (cat) => {
-        if (cat === "Todo") {
-            if (data.categorias.includes("Todo")) {
-                setData("categorias", []);
-            } else {
-                setData("categorias", ALL_CATEGORIES);
-            }
-            return;
+    const handleCategoriaChange = (catId) => {
+        if (data.categorias.includes(catId)) {
+            setData("categorias", data.categorias.filter((id) => id !== catId));
+        } else {
+            setData("categorias", [...data.categorias, catId]);
         }
-
-        let nuevas = data.categorias.includes(cat)
-            ? data.categorias.filter((c) => c !== cat)
-            : [...data.categorias, cat];
-
-        const sinTodo = ALL_CATEGORIES.filter((c) => c !== "Todo");
-        const tieneTodas = sinTodo.every((c) => nuevas.includes(c));
-
-        nuevas = tieneTodas
-            ? [...sinTodo, "Todo"]
-            : nuevas.filter((c) => c !== "Todo");
-
-        setData("categorias", nuevas);
     };
 
     const handleLogoChange = (e) => {
@@ -188,27 +115,21 @@ export default function EmpresaEdit({ auth, empresa }) {
 
                 {/* HEADER */}
                 <div className="d-flex justify-content-between align-items-center mb-4">
-                    <h2
-                        className="fw-bold mb-0"
-                        style={{ color: darkMode ? "#4dd2a1" : "#007bff" }}
-                    >
+                    <h2 className="fw-bold mb-0" style={{ color: darkMode ? "#4dd2a1" : "#007bff" }}>
                         ✏️ Editar Empresa
                     </h2>
+
                     <Link
                         href={route("admin.empresas.index")}
-                        className={`btn rounded-pill shadow-sm ${
-                            darkMode
-                                ? "btn-outline-light text-light border-secondary"
-                                : "btn-outline-secondary"
-                        }`}
+                        className={`btn rounded-pill shadow-sm ${darkMode ? "btn-outline-light" : "btn-outline-secondary"}`}
                     >
-                        <i className="bi bi-arrow-left-circle me-2"></i> Volver
+                        <i className="bi bi-arrow-left-circle me-2"></i>
+                        Volver
                     </Link>
                 </div>
 
                 {/* FORM */}
-                <div
-                    className="card border-0 shadow-lg rounded-4 p-4"
+                <div className="card border-0 shadow-lg rounded-4 p-4"
                     style={{ background: bgCard, color: textColor }}
                 >
                     <form onSubmit={handleSubmit}>
@@ -216,9 +137,7 @@ export default function EmpresaEdit({ auth, empresa }) {
 
                             {/* Nombre */}
                             <div className="col-md-6">
-                                <label className="fw-semibold mb-1">
-                                    Nombre de la empresa
-                                </label>
+                                <label className="fw-semibold mb-1">Nombre de la empresa</label>
                                 <input
                                     type="text"
                                     className="form-control shadow-sm rounded-pill"
@@ -226,16 +145,12 @@ export default function EmpresaEdit({ auth, empresa }) {
                                     value={data.nombre}
                                     onChange={(e) => setData("nombre", e.target.value)}
                                 />
-                                {errors?.nombre && (
-                                    <small className="text-danger">{errors.nombre}</small>
-                                )}
+                                {errors?.nombre && <small className="text-danger">{errors.nombre}</small>}
                             </div>
 
                             {/* Contacto */}
                             <div className="col-md-6">
-                                <label className="fw-semibold mb-1">
-                                    Número de contacto
-                                </label>
+                                <label className="fw-semibold mb-1">Contacto</label>
                                 <input
                                     type="text"
                                     className="form-control shadow-sm rounded-pill"
@@ -243,16 +158,12 @@ export default function EmpresaEdit({ auth, empresa }) {
                                     value={data.contacto}
                                     onChange={(e) => setData("contacto", e.target.value)}
                                 />
-                                {errors?.contacto && (
-                                    <small className="text-danger">{errors.contacto}</small>
-                                )}
+                                {errors?.contacto && <small className="text-danger">{errors.contacto}</small>}
                             </div>
 
                             {/* Correo */}
                             <div className="col-md-6">
-                                <label className="fw-semibold mb-1">
-                                    Correo electrónico
-                                </label>
+                                <label className="fw-semibold mb-1">Correo</label>
                                 <input
                                     type="email"
                                     className="form-control shadow-sm rounded-pill"
@@ -260,34 +171,25 @@ export default function EmpresaEdit({ auth, empresa }) {
                                     value={data.correo}
                                     onChange={(e) => setData("correo", e.target.value)}
                                 />
-                                {errors?.correo && (
-                                    <small className="text-danger">{errors.correo}</small>
-                                )}
+                                {errors?.correo && <small className="text-danger">{errors.correo}</small>}
                             </div>
 
                             {/* Logo */}
                             <div className="col-md-6">
-                                <label className="fw-semibold mb-1">Logo actual</label>
+                                <label className="fw-semibold mb-1">Logo</label>
                                 <div className="d-flex align-items-center gap-3">
-                                    <div
-                                        className="border rounded-circle overflow-hidden shadow-sm d-flex justify-content-center align-items-center"
+                                    <div className="rounded-circle overflow-hidden shadow-sm"
                                         style={{
                                             width: "75px",
                                             height: "75px",
-                                            backgroundColor: darkMode ? "#222" : "#f8f9fa",
+                                            backgroundColor: bgInput,
+                                            border: `1px solid ${borderColor}`,
                                         }}
                                     >
                                         {preview ? (
-                                            <img
-                                                src={preview}
-                                                alt="Logo preview"
-                                                className="object-fit-cover w-100 h-100"
-                                            />
+                                            <img src={preview} className="w-100 h-100 object-fit-cover" />
                                         ) : (
-                                            <i
-                                                className="bi bi-image fs-3"
-                                                style={{ color: secondaryText }}
-                                            ></i>
+                                            <i className="bi bi-image fs-3" style={{ color: secondaryText }}></i>
                                         )}
                                     </div>
 
@@ -300,96 +202,28 @@ export default function EmpresaEdit({ auth, empresa }) {
                                 </div>
                             </div>
 
-                            {/* Password */}
-                            <div className="col-md-6">
-                                <label className="fw-semibold mb-1">
-                                    Nueva contraseña (opcional)
-                                </label>
-                                <div className="input-group">
-                                    <input
-                                        type={showPassword ? "text" : "password"}
-                                        className="form-control shadow-sm rounded-pill"
-                                        style={inputBaseStyle}
-                                        value={data.password}
-                                        onChange={(e) => setData("password", e.target.value)}
-                                        placeholder="Debe cumplir ISO 27001"
-                                    />
-                                    <button
-                                        type="button"
-                                        className="btn btn-outline-secondary ms-2 rounded-pill"
-                                        onClick={() => setShowPassword((prev) => !prev)}
-                                    >
-                                        <i
-                                            className={`bi ${
-                                                showPassword ? "bi-eye-slash" : "bi-eye"
-                                            }`}
-                                        ></i>
-                                    </button>
-                                </div>
-
-                                {errors?.password && (
-                                    <small className="text-danger">{errors.password}</small>
-                                )}
-                            </div>
-
-                            {/* Confirm password */}
-                            <div className="col-md-6">
-                                <label className="fw-semibold mb-1">
-                                    Confirmar nueva contraseña
-                                </label>
-                                <div className="input-group">
-                                    <input
-                                        type={showPasswordConfirm ? "text" : "password"}
-                                        className="form-control shadow-sm rounded-pill"
-                                        style={inputBaseStyle}
-                                        value={data.password_confirmation}
-                                        onChange={(e) =>
-                                            setData("password_confirmation", e.target.value)
-                                        }
-                                        placeholder="Repite la contraseña"
-                                    />
-                                    <button
-                                        type="button"
-                                        className="btn btn-outline-secondary ms-2 rounded-pill"
-                                        onClick={() =>
-                                            setShowPasswordConfirm((prev) => !prev)
-                                        }
-                                    >
-                                        <i
-                                            className={`bi ${
-                                                showPasswordConfirm
-                                                    ? "bi-eye-slash"
-                                                    : "bi-eye"
-                                            }`}
-                                        ></i>
-                                    </button>
-                                </div>
-                            </div>
                         </div>
 
                         {/* Categorías */}
                         <div className="mt-4">
-                            <label className="fw-semibold mb-2">
-                                Categorías que maneja:
-                            </label>
+                            <label className="fw-semibold mb-2">Categorías:</label>
 
                             <div className="row">
-                                {ALL_CATEGORIES.map((cat) => (
-                                    <div className="col-md-3 col-6" key={cat}>
+                                {categorias.map((cat) => (
+                                    <div className="col-md-3 col-6" key={cat.id}>
                                         <div className="form-check">
                                             <input
                                                 type="checkbox"
-                                                id={cat}
+                                                id={`cat-${cat.id}`}
                                                 className="form-check-input"
-                                                checked={data.categorias.includes(cat)}
-                                                onChange={() => handleCheckbox(cat)}
+                                                checked={data.categorias.includes(cat.id)}
+                                                onChange={() => handleCategoriaChange(cat.id)}
                                             />
-                                            <label
-                                                htmlFor={cat}
+                                            <label style={{ color: secondaryText }}
                                                 className="form-check-label"
-                                                style={{ color: secondaryText }}
+                                                htmlFor={`cat-${cat.id}`}
                                             >
-                                                {cat}
+                                                {cat.nombre}
                                             </label>
                                         </div>
                                     </div>
@@ -405,17 +239,13 @@ export default function EmpresaEdit({ auth, empresa }) {
                         <div className="mt-4">
                             <div className="form-check form-switch">
                                 <input
-                                    className="form-check-input"
                                     type="checkbox"
+                                    className="form-check-input"
                                     id="activoSwitch"
                                     checked={data.activo}
                                     onChange={(e) => setData("activo", e.target.checked)}
                                 />
-                                <label
-                                    className="form-check-label fw-semibold"
-                                    htmlFor="activoSwitch"
-                                    style={{ color: secondaryText }}
-                                >
+                                <label htmlFor="activoSwitch" className="form-check-label fw-semibold">
                                     Empresa activa
                                 </label>
                             </div>
@@ -424,15 +254,13 @@ export default function EmpresaEdit({ auth, empresa }) {
                         {/* Botón */}
                         <div className="text-end mt-4">
                             <button
-                                id="btnGuardar"
                                 type="submit"
                                 disabled={isSubmitting}
                                 className={`btn rounded-pill px-4 py-2 fw-semibold shadow-sm ${
-                                    isSubmitting ? "opacity-75 cursor-not-allowed" : ""
+                                    isSubmitting ? "opacity-75" : ""
                                 }`}
                                 style={{
-                                    background:
-                                        "linear-gradient(90deg, #007bff 0%, #00d4a1 100%)",
+                                    background: "linear-gradient(90deg, #007bff 0%, #00d4a1 100%)",
                                     color: "#fff",
                                 }}
                             >
