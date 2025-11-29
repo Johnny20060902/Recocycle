@@ -61,17 +61,19 @@ RF-09 – Panel administrativo
 
  
 Rol	Email	Contraseña	Descripción
-Admin	admin@recocycle.com
-	SHAty2020	Acceso completo a panel, reportes, rankings, etc.
-Recolector	santy19abasto@gmail.com
-	Julian0423@	
+Admin	
+suarezabastojohnny60@gmail.com
+Fervorace9496939@
+	Acceso completo a panel, reportes, rankings, etc.
+Recolector	empresadefensa@gmail.com
+Julian0423@	
 
 Puede ver mapa, 
 puntos de recolección y 
 su perfil.
 
 Usuario	johnnysuarezabasto@gmail.com
-	Fervorace9497939@	Puede registrar reciclajes, ver su ranking.
+Fervorace9496939@#	Puede registrar reciclajes, ver su ranking.
 Listado de Roles más sus credenciales de todos los Admin / Users del sistema
 
 Requisitos del sistema:
